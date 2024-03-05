@@ -1,9 +1,9 @@
 from flask import Flask, jsonify, request
-from models import db, Incidence, Location, User, UVRecord, TempAlert,SSReminder, Mortality  # Import all your models
+from models import db, Incidence, Location, User, UVRecord, TempAlert,SSReminder, Mortality  # Import all models
 from flask_sqlalchemy import SQLAlchemy
 import os  # For environment variables 
 # If we build any ML or AI models import below
-from your_ml_models import ClothingRecommender # Reminder to build clothing recommender
+#from your_ml_models import ClothingRecommender # Reminder to build clothing recommender
 
 app = Flask(__name__)
 
@@ -30,7 +30,6 @@ def get_location(location_id):
     location = Location.query.get_or_404(location_id)  # Fetch by ID or return 404
     return jsonify(location.to_dict()) 
 
-
 # USERS
 @app.route('/users', methods=['POST']) 
 def create_user():
@@ -39,7 +38,6 @@ def create_user():
     db.session.add(new_user)
     db.session.commit()
     return jsonify(new_user.to_dict()), 201  # Return created user, status code 201
-
 
 @app.route('/users/<int:user_id>', methods=['GET', 'PUT', 'DELETE'])
 def manage_user(user_id):
@@ -60,7 +58,6 @@ def manage_user(user_id):
         db.session.commit()
         return '', 204  # Return empty response, status code 204
 
-
 # UV DATA (Simplified)
 @app.route('/uv-data', methods=['GET'])
 def get_uv_data():
@@ -68,7 +65,6 @@ def get_uv_data():
     uv_records = UVRecord.query.all()
     result = [record.to_dict() for record in uv_records]
     return jsonify(result) 
-
 
 # SUNSCREEN REMINDERS
 @app.route('/users/<int:user_id>/sunscreen-reminders', methods=['GET', 'POST'])
@@ -101,7 +97,6 @@ def get_temp_alerts_for_location(location_id):
     temp_alerts = location.temp_alerts
     result = [alert.to_dict() for alert in temp_alerts]
     return jsonify(result)
-
 
 # Suburbs
 @app.route('/locations/<int:location_id>/suburbs', methods=['GET'])
@@ -161,6 +156,24 @@ def get_incidence_data():
     result = [record.to_dict() for record in incidence_records]
     return jsonify(result)
 
+# Current conditions for Locations
+@app.route('/locations/<int:location_id>/current-conditions', methods=['GET'])
+def get_current_conditions_for_location(location_id):
+    location = Location.query.get_or_404(location_id)
+
+    latest_uv_record = UVRecord.query.filter_by(location_id=location_id).order_by(UVRecord.uvrecord_timestamp.desc()).first()
+
+    latest_temp_alert = TempAlert.query.filter_by(location_id=location_id).order_by(TempAlert.temp_alert_timestamp.desc()).first()
+
+    result = {
+        'location': location.to_dict(), 
+        'uv_index': latest_uv_record.to_dict() if latest_uv_record else None,
+        'heat_index': None,  # Placeholder - see explanation below 
+        'temperature_alert': latest_temp_alert.to_dict() if latest_temp_alert else None
+    }
+    return jsonify(result)
+
+
 '''
 #  Clothing Recommendations (Placeholder)
 @app.route('/clothing-recommendations', methods=['POST'])
@@ -180,26 +193,10 @@ def get_clothing_recommendations():
 
     return jsonify(recommendations)
 '''
-# Current conditions for Locations
-@app.route('/locations/<int:location_id>/current-conditions', methods=['GET'])
-def get_current_conditions_for_location(location_id):
-    location = Location.query.get_or_404(location_id)
-
-    latest_uv_record = UVRecord.query.filter_by(location_id=location_id).order_by(UVRecord.uvrecord_timestamp.desc()).first()
-
-    latest_temp_alert = TempAlert.query.filter_by(location_id=location_id).order_by(TempAlert.temp_alert_timestamp.desc()).first()
-
-    result = {
-        'location': location.to_dict(), 
-        'uv_index': latest_uv_record.to_dict() if latest_uv_record else None,
-        'heat_index': None,  # Placeholder - see explanation below 
-        'temperature_alert': latest_temp_alert.to_dict() if latest_temp_alert else None
-    }
-    return jsonify(result)
 
 
 # Run the App (Development Mode)
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()  # Create database tables 
-    app.run(debug=True) 
+    app.run(debug=True, port=5000) 
