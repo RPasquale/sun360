@@ -12,8 +12,6 @@ class User(db.Model):
     ss_applications = db.relationship('SSAppl', backref='user', lazy=True)
     ss_reminders = db.relationship('SSReminder', backref='user', lazy=True)
 
-
-
 class Location(db.Model):
     location_id = db.Column(db.Integer, primary_key=True)
     location_name = db.Column(db.String(80), nullable=False)
