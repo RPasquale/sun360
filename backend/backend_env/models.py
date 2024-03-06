@@ -137,6 +137,8 @@ class SSReminder(db.Model):
     ssreminder_time = db.Column(db.Time, nullable=False) 
     ssreminder_message = db.Column(db.String(250), nullable=False)
     ssreminder_status = db.Column(db.String(20), nullable=False)
+    uv_index_threshold = db.Column(db.Integer, nullable=True)  # Make threshold optional
+    temp_alert = db.Column(db.Boolean, nullable=False)
 
     def to_dict(self):
         return {
@@ -145,7 +147,9 @@ class SSReminder(db.Model):
             'ssreminder_freq': self.ssreminder_freq,
             'ssreminder_time': self.ssreminder_time,
             'ssreminder_message': self.ssreminder_message,
-            'ssreminder_status': self.ssreminder_status
+            'ssreminder_status': self.ssreminder_status,
+            'uv_index_threshold': self.uv_index_threshold,
+            'temp_alert': self.temp_alert
         } 
 
 

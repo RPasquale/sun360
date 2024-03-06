@@ -201,27 +201,60 @@ def get_temperature_history(location_id):
               for record in records]
     return jsonify(result)
 
+@app.route('/users/<int:user_id>/sunscreen-reminders/<int:ssreminder_id>', methods=['PUT'])
+def update_sunscreen_reminder(user_id, ssreminder_id):
+    user = User.query.get_or_404(user_id)
+    reminder = SSReminder.query.get_or_404(ssreminder_id)
+
+    if reminder.user_id != user_id:
+        return jsonify({'error': 'Unauthorized'}), 401  # Authorization check
+
+    data = request.get_json()
+    for key, value in data.items():
+        setattr(reminder, key, value) 
+    db.session.commit()
+    return jsonify(reminder.to_dict()) 
+
+@app.route('/users/<int:user_id>/sunscreen-reminders/<int:ssreminder_id>', methods=['DELETE'])
+def delete_sunscreen_reminder(user_id, ssreminder_id):
+    user = User.query.get_or_404(user_id) 
+    reminder = SSReminder.query.get_or_404(ssreminder_id)
+
+    if reminder.user_id != user_id:
+        return jsonify({'error': 'Unauthorized'}), 401  # Authorization check
+
+    db.session.delete(reminder)
+    db.session.commit()
+    return '', 204  
 
 
-'''
-#  Clothing Recommendations (Placeholder)
 @app.route('/clothing-recommendations', methods=['POST'])
 def get_clothing_recommendations():
     data = request.get_json()
+    uv_index = data.get('uv_index', 7)
 
-    # Extract UV index, location, user data etc., from 'data' 
-    # Example placeholders:
-    uv_index = data.get('uv_index', 7)  # Default to a moderate UV index
-    location = data.get('location', 'Melbourne, Australia')
+    recommendations = []
+    if uv_index >= 3:
+        recommendations.append({'clothing_type': 'Wide-brimmed hat', 'upf': 50})
+        recommendations.append({'clothing_type': 'Sunglasses', 'upf': 400})
+        
+        if uv_index >= 6:
+            # Recommend stronger protection
+            recommendations.append({'clothing_type': 'Sunscreen', 'spf': 50})
+            recommendations.append({'clothing_type': 'UV-blocking umbrella', 'upf': 50})
 
-    # Placeholder Recommendation Logic (replace later)
-    recommendations = [
-        {'clothing_type': 'Wide-brimmed hat', 'upf': 50},
-        {'clothing_type': 'Sunglasses', 'upf': 400} 
-    ]
+            if uv_index >= 8:
+                # Advise extra precautions
+                recommendations.append({'clothing_type': 'UV-protective lip balm', 'spf': 30})
+                recommendations.append({'clothing_type': 'Sun protective gloves', 'upf': 50})
 
+                if uv_index >= 11:
+                    # Suggest minimizing outdoor activities
+                    recommendations.append({'clothing_type': 'Stay indoors or seek shade', 'note': 'UV index is extremely high'})
+
+
+    
     return jsonify(recommendations)
-'''
 
 
 # Run the App (Development Mode)
