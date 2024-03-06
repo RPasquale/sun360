@@ -12,7 +12,7 @@ function RegisterPage() {
   const [error, setError] = useState(null);
 
   // Correctly using useContext at the component level
-  const { login } = useContext(UserContext); // Destructure login method here
+  const { register } = useContext(UserContext); // Update to new name 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,7 +24,7 @@ function RegisterPage() {
     }
 
     try {
-      const response = await fetch('/users', { // Replace '/users' with your actual registration route
+      const response = await fetch('http://127.0.0.1:5000/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -32,21 +32,25 @@ function RegisterPage() {
           email,
           password,
           location,
-          skin_type: skinType, // Assuming you have skin_type in your backend model
+          skin_type: skinType,
           gender,
         }),
       });
-      if (!response.ok) {
+  
+      console.log("Response:", response); // Log the entire response
+
+
+      if (response.ok) { // 'if' statement on next line
+        const userData = await response.json(); 
+        await register(username, password);  
+        window.location.href = '/'; 
+      } else {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Registration failed');
       }
-
-      const userData = await response.json(); // Assuming backend sends user data
-      await login(username, password); // Log the user in using destructured login method
-      window.location.href = '/'; // Redirect on success 
-
     } catch (error) {
-      setError(error.message);
+      console.error('Registration Error:', error);
+      setError('Registration failed. Please try again.'); 
     }
   };
 

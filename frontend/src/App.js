@@ -29,7 +29,7 @@ function App() {
         <div className="app-container">
           <Navbar />
           <Routes> {/* Updated from Switch to Routes */}
-            <Route path="/" element={<HomePage />} />
+            <Route path="/home" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
           </Routes>

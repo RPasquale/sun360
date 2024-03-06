@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request
 from models import db, Incidence, Location, Suburb, User, UVRecord, TempAlert,SSReminder, Mortality  # Import all models
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import login_user, logout_user, login_required
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from faker import Faker 
 from flask_cors import CORS
@@ -10,7 +10,8 @@ import os  # For environment variables
 # If we build any ML or AI models import below
 #from your_ml_models import ClothingRecommender # Reminder to build clothing recommender
 app = Flask(__name__)
-
+login_manager = LoginManager()
+login_manager.init_app(app)
 #######################################################
 # Real Data
 
@@ -79,14 +80,41 @@ def get_location(location_id):
 
     return jsonify(result) 
 
+def is_valid_password(password):
+    """Checks basic password requirements"""
+    if len(password) < 8:  # Example: Minimum 8 characters
+        return False
+    # You can add more checks: uppercase, lowercase, numbers, symbols, etc. 
+    return True
 # USERS
-@app.route('/users', methods=['POST']) 
+@app.route('/users', methods=['POST'])
 def create_user():
-    data = request.get_json() 
-    new_user = User(**data)  # Unpack data assuming it matches model attributes
-    db.session.add(new_user)
-    db.session.commit()
-    return jsonify(new_user.to_dict()), 201  # Return created user, status code 201
+    data = request.get_json()
+
+    try:
+        # Thoroughly validate user data before creating user
+        if User.query.filter_by(user_email=data['email']).first(): 
+            return jsonify({'error': 'Email already exists'}), 400
+
+        if not is_valid_password(data['password']): 
+            return jsonify({'error': 'Password not strong enough'}), 400
+
+        # Hash the password
+        hashed_password = generate_password_hash(data['password'], method='pbkdf2:sha256')
+        new_user = User(user_name=data['username'], user_email=data['email'], hashed_password=hashed_password, **data) 
+
+        db.session.add(new_user)
+        db.session.commit()
+        login_user(new_user)  
+        return jsonify(new_user.to_dict()), 201
+
+    except Exception as e:  # Catch any unexpected errors
+        print(f"Registration Error: {e}") 
+        return jsonify({'error': 'Unexpected registration error'}), 500
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 @app.route('/users/<int:user_id>', methods=['GET', 'PUT', 'DELETE'])
 def manage_user(user_id):
@@ -377,7 +405,7 @@ if __name__ == '__main__':
         db.create_all()  
         if not User.query.first():  # More efficient check if users table is empty
             generate_data()
-    app.run(debug=True)
+    app.run(debug=True, port=5000)
 
 ########################################################################
 # Real Database:

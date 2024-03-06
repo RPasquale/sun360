@@ -1,0 +1,23 @@
+/* navbar.css */
+.navbar {
+    display: flex; /* Allow for proper layout */
+    justify-content: space-between; /* Distribute elements */
+    align-items: center; /* Vertical alignment */
+    padding: 1rem; /* Add some padding */
+    background-color: #f0f0f0; /* Example background color */
+    border-bottom: 1px solid #ddd; /* Optional border */
+}
+
+.navbar-center {
+    flex: 1; /* Make center element take up available space */
+    text-align: center;
+}
+
+.brand-logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.navbar-right {
+  /* Add any specific styling for the right side of the navbar */
+}
