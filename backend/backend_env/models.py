@@ -32,7 +32,9 @@ class Location(db.Model):
     temp_alerts = db.relationship('TempAlert', backref='location', lazy=True)
     suburbs = db.relationship('Suburb', backref='location', lazy=True)
     uv_records = db.relationship('UVRecord', backref='location', lazy=True)
-    users = db.relationship('User', backref='location', lazy=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False) 
+    users = db.relationship('User', backref='locations', lazy=True)  
+    user = db.relationship('User', backref='locations') 
         
     def to_dict(self):
         return {
