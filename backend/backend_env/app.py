@@ -27,8 +27,15 @@ def get_locations():
 
 @app.route('/locations/<int:location_id>', methods=['GET']) 
 def get_location(location_id):
-    location = Location.query.get_or_404(location_id)  # Fetch by ID or return 404
-    return jsonify(location.to_dict()) 
+    location = Location.query.get_or_404(location_id)
+
+    # Include related data if needed
+    result = location.to_dict()
+    if request.args.get('include_suburbs'): 
+        result['suburbs'] = [suburb.to_dict() for suburb in location.suburbs]
+    # Add similar logic for other related data (temp_alerts, uv_records) as required
+
+    return jsonify(result) 
 
 # USERS
 @app.route('/users', methods=['POST']) 
@@ -94,9 +101,13 @@ def get_temp_alert(temp_alert_id):
 @app.route('/locations/<int:location_id>/temp-alerts', methods=['GET'])
 def get_temp_alerts_for_location(location_id):
     location = Location.query.get_or_404(location_id)
-    temp_alerts = location.temp_alerts
-    result = [alert.to_dict() for alert in temp_alerts]
-    return jsonify(result)
+
+    # Include related data if needed
+    result = location.to_dict()
+    if request.args.get('include_temp_alerts'): 
+        result['temp_alerts'] = [alert.to_dict() for alert in location.temp_alerts]  
+
+    return jsonify(result) 
 
 # Suburbs
 @app.route('/locations/<int:location_id>/suburbs', methods=['GET'])
@@ -160,18 +171,36 @@ def get_incidence_data():
 @app.route('/locations/<int:location_id>/current-conditions', methods=['GET'])
 def get_current_conditions_for_location(location_id):
     location = Location.query.get_or_404(location_id)
-
     latest_uv_record = UVRecord.query.filter_by(location_id=location_id).order_by(UVRecord.uvrecord_timestamp.desc()).first()
-
     latest_temp_alert = TempAlert.query.filter_by(location_id=location_id).order_by(TempAlert.temp_alert_timestamp.desc()).first()
+    latest_uv_record = UVRecord.query.filter_by(location_id=location_id).order_by(UVRecord.uvrecord_timestamp.desc()).first()
 
     result = {
         'location': location.to_dict(), 
         'uv_index': latest_uv_record.to_dict() if latest_uv_record else None,
-        'heat_index': None,  # Placeholder - see explanation below 
+        'temperature': latest_uv_record.temp_value if latest_uv_record else None,  
         'temperature_alert': latest_temp_alert.to_dict() if latest_temp_alert else None
     }
     return jsonify(result)
+
+
+@app.route('/locations/<int:location_id>/temperature-history', methods=['GET'])
+def get_temperature_history(location_id):
+    start_date = request.args.get('start_date') 
+    end_date = request.args.get('end_date')
+
+    # Query for temperature records from your database (adjust as needed)
+    if start_date and end_date:
+        records = UVRecord.query.filter_by(location_id=location_id).filter(
+                  UVRecord.uvrecord_timestamp.between(start_date, end_date)).all()
+    else:
+        # Fetch a default range (e.g., past 7 days)
+        ... 
+
+    result = [{'timestamp': record.uvrecord_timestamp, 'temperature': record.temp_value} 
+              for record in records]
+    return jsonify(result)
+
 
 
 '''

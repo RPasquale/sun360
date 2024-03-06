@@ -45,11 +45,12 @@ function UVLevelsMap() {
 
   // Function to display fetched UV information
   const displayUVInfo = (data) => {
-    // Example: Create a simple popup
     Leaflet.popup()
-      .setLatLng([data.location.location_lat, data.location.location_long]) 
-      .setContent(`<b>Location:</b> ${data.location.location_name}<br>
-                   <b>UV Index:</b> ${data.uv_index}`)
+        .setLatLng([data.location.location_lat, data.location.location_long]) 
+        .setContent(`<b>Location:</b> ${data.location.location_name}<br>
+                     <b>UV Index:</b> ${data.uv_index.uvindex_value || 'Not Available'}<br>
+                      <b>Temperature:</b> ${data.temperature || 'Not Available'}` 
+        )
       .openOn(map);
   };
 
