@@ -86,6 +86,7 @@ def is_valid_password(password):
         return False
     # You can add more checks: uppercase, lowercase, numbers, symbols, etc. 
     return True
+
 # USERS
 @app.route('/users', methods=['POST'])
 def create_user():
