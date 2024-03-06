@@ -1,20 +1,37 @@
 from flask import Flask, jsonify, request
-from models import db, Incidence, Location, User, UVRecord, TempAlert,SSReminder, Mortality  # Import all models
+from models import db, Incidence, Location, Suburb, User, UVRecord, TempAlert,SSReminder, Mortality  # Import all models
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import login_user, logout_user, login_required
 from werkzeug.security import generate_password_hash, check_password_hash
+from faker import Faker 
+from flask_cors import CORS
 
 import os  # For environment variables 
 # If we build any ML or AI models import below
 #from your_ml_models import ClothingRecommender # Reminder to build clothing recommender
-
 app = Flask(__name__)
 
+#######################################################
+# Real Data
+
+'''
+# Real Data
 # Database Configuration
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get('DATABASE_URL')  # Load from environment variable
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
 db.init_app(app) # Initialize SQLAlchemy
+
+'''
+#######################################################
+# Fake data
+
+
+# Database config
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get('DATABASE_URL', 'sqlite:///app.db') 
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+CORS(app)  
+
+db = SQLAlchemy(app)
 
 # Basic Routes (Placeholders )
 @app.route('/')
@@ -277,13 +294,100 @@ def get_clothing_recommendations():
                     # Suggest minimizing outdoor activities
                     recommendations.append({'clothing_type': 'Stay indoors or seek shade', 'note': 'UV index is extremely high'})
 
-
-    
+    print(data)
     return jsonify(recommendations)
 
 
+########################################################################
+# FAKE Database:
+
+fake = Faker()  # Create a Faker instance
+
+# Function to generate sample data (modify as needed)
+def generate_data():
+    # Create and add locations
+    locations = [
+        Location(location_name="Melbourne, Australia", location_lat=-37.81, location_long=144.96),
+        Location(location_name="Sydney, Australia", location_lat=-33.86, location_long=151.20),
+        Location(location_name="Brisbane, Australia", location_lat=-27.47, location_long=153.02)
+    ]
+    db.session.add_all(locations)
+    db.session.flush()  # Flush to assign IDs for foreign key relationships
+
+    # Generate and add users, including their sunscreen applications and reminders
+    users = []
+    for _ in range(10):
+        location = fake.random_element(elements=locations)
+        user = User(
+            user_name=fake.name(),
+            user_email=fake.email(),
+            user_skin_type=fake.random_element(elements=('Type I', 'Type II', 'Type III', 'Type IV', 'Type V', 'Type VI')),
+            user_gender=fake.random_element(elements=('Male', 'Female', 'Other', 'Prefer not to say')),
+        )
+        db.session.add(user)
+        users.append(user)
+    db.session.flush()
+
+    # Create and add suburbs and temp alerts
+    suburbs = [
+        Suburb(suburb_name="Docklands", suburb_postcode=3008, suburb_state="VIC", location_id=locations[0].location_id, suburb_lat=-37.817, suburb_long=144.946),
+        Suburb(suburb_name="Surry Hills", suburb_postcode=2010, suburb_state="NSW", location_id=locations[1].location_id, suburb_lat=-33.884, suburb_long=151.21),
+    ]
+    temp_alerts = [
+        TempAlert(temp_alert_desc="High heat alert", temp_alert_timestamp=fake.date_time_this_year(), location_id=locations[0].location_id),
+        TempAlert(temp_alert_desc="Moderate heat warning", temp_alert_timestamp=fake.date_time_this_year(), location_id=locations[1].location_id),
+    ]
+
+    # Generate and add UV records, Mortality, and Incidence records
+    uv_records = []
+    mortality_records = []
+    incidence_records = []
+    for location in locations:
+        for _ in range(5):  # Assuming generating 5 records per location
+            uv_record = UVRecord(
+                uvrecord_timestamp=fake.date_time_this_year(), location_id=location.location_id,
+                uvindex_value=fake.random_int(min=0, max=11), temp_value=fake.random_int(min=15, max=40)
+            )
+            uv_records.append(uv_record)
+
+            mortality_record = Mortality(
+                location_lat=location.location_lat, location_long=location.location_long,
+                cancer_type=fake.random_element(elements=['Skin', 'Lung', 'Breast']),
+                year=fake.random_int(min=2000, max=2022), mort_count=fake.random_int(min=1, max=100),
+                mortil_age_group=fake.random_element(elements=['0-14', '15-44', '45-64', '65+']),
+                mortil_sex=fake.random_element(elements=['Male', 'Female'])
+            )
+            mortality_records.append(mortality_record)
+
+            incidence_record = Incidence(
+                location_lat=location.location_lat, location_long=location.location_long,
+                cancer_type=mortality_record.cancer_type,  # Reusing the cancer type for consistency
+                year=mortality_record.year, inci_count=fake.random_int(min=1, max=200),
+                inci_age_group=mortality_record.mortil_age_group, inci_sex=mortality_record.mortil_sex
+            )
+            incidence_records.append(incidence_record)
+
+    # Add all generated items to the session
+    db.session.add_all(suburbs + temp_alerts + uv_records + mortality_records + incidence_records)
+
+    db.session.commit()
+
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()  
+        if not User.query.first():  # More efficient check if users table is empty
+            generate_data()
+    app.run(debug=True)
+
+########################################################################
+# Real Database:
+
+'''
+# Real Database:
 # Run the App (Development Mode)
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()  # Create database tables 
     app.run(debug=True, port=5000) 
+
+'''
