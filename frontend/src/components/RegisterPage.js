@@ -1,48 +1,49 @@
-import React, { useState } from 'react';
-import UserContext from './UserContext'; 
-
+import React, { useState, useContext } from 'react'; // Import useContext
+import UserContext from './UserContext';
 
 function RegisterPage() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');  
-  const [location, setLocation] = useState(''); 
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [location, setLocation] = useState('');
   const [skinType, setSkinType] = useState('');
-  const [gender, setGender] = useState(''); 
+  const [gender, setGender] = useState('');
   const [error, setError] = useState(null);
+
+  // Correctly using useContext at the component level
+  const { login } = useContext(UserContext); // Destructure login method here
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Basic validation 
+    // Basic validation
     if (password !== confirmPassword) {
       setError('Passwords do not match');
-      return; 
+      return;
     }
 
     try {
       const response = await fetch('/users', { // Replace '/users' with your actual registration route
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           username,
-          email, 
+          email,
           password,
           location,
           skin_type: skinType, // Assuming you have skin_type in your backend model
-          gender
+          gender,
         }),
       });
       if (!response.ok) {
-        const errorData = await response.json(); 
-        throw new Error(errorData.message || 'Registration failed'); 
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Registration failed');
       }
 
-      const userData = await response.json(); // Assuming backend sends user data 
-      const { login } = useContext(UserContext);
-      await login(username, password); // Log the user in
-      window.location.href = '/'; // Redirect on success ;  
+      const userData = await response.json(); // Assuming backend sends user data
+      await login(username, password); // Log the user in using destructured login method
+      window.location.href = '/'; // Redirect on success 
 
     } catch (error) {
       setError(error.message);
@@ -123,4 +124,13 @@ function RegisterPage() {
 }
 
 export default RegisterPage;
+
+
+
+
+
+
+
+
+   
 
