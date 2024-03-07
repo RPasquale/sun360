@@ -50,18 +50,57 @@ with conn.cursor() as cur:
     #     """ALTER TABLE FAMILY_MEMBER ADD CONSTRAINT fm_gender_chk CHECK ( fm_gender IN ( 'M', 'F', 'X' ));""")
     # cur.execute("""ALTER TABLE FAMILY_MEMBER ADD CONSTRAINT users_family_member FOREIGN KEY ( users_id ) REFERENCES  USERS ( users_id );""")
 
+    # # Reminders Table
+    # cur.execute("""CREATE TABLE IF NOT EXISTS SSREMINDER (
+    #     ssreminder_id SERIAL PRIMARY KEY,
+    #     ssreminder_type VARCHAR(1),
+    #     ssreminder_date DATE,
+    #     ssreminder_time TIME,
+    #     ssreminder_weekday VARCHAR(2),
+    #     ssreminder_title VARCHAR(100),
+    #     ssreminder_notes TEXT,
+    #     ssreminder_color_code VARCHAR(1),
+    #     ssreminder_status VARCHAR(1),
+    #     users_id INTEGER
+    # );""")
+
+    # # Comments related to codes and short forms
+    # cur.execute("""COMMENT ON COLUMN SSREMINDER.ssreminder_type IS 'Type of reminders based on frequency, O: One Time, D: Daily, W: Weekly'""")
+    # cur.execute(
+    #     """COMMENT ON COLUMN SSREMINDER.ssreminder_weekday IS 'Weekday for weekly reminders, MO, TU, WE, TH, FR, SA, SU'""")
+    # cur.execute(
+    #     """COMMENT ON COLUMN SSREMINDER.ssreminder_color_code IS 'User set severity of reminders, R: Red, Y: Yellow, G: Green'""")
+    # cur.execute(
+    #     """COMMENT ON COLUMN SSREMINDER.ssreminder_status IS 'Status of reminder, P: Pending, C: Completed, U: Unprotected'""")
+
+    # cur.execute(
+    #     """ALTER TABLE SSREMINDER ADD CONSTRAINT ssreminder_type_chk CHECK ( ssreminder_type IN ( 'O', 'D', 'W' ));""")
+    # cur.execute(
+    #     """ALTER TABLE SSREMINDER ADD CONSTRAINT ssreminder_weekday_chk CHECK ( ssreminder_weekday IN ( 'MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'));""")
+    # cur.execute(
+    #     """ALTER TABLE SSREMINDER ADD CONSTRAINT ssreminder_color_code_chk CHECK ( ssreminder_color_code IN ( 'R', 'Y', 'G' ));""")
+    # cur.execute(
+    #     """ALTER TABLE SSREMINDER ADD CONSTRAINT ssreminder_status_chk CHECK ( ssreminder_status IN ( 'P', 'C', 'U' ));""")
+    # cur.execute(
+    #     """ALTER TABLE SSREMINDER ADD CONSTRAINT USERS_SSREMINDER FOREIGN KEY ( users_id ) REFERENCES  USERS ( users_id );""")
+
     # Insertion into Suburb Table (removed and saved elsewhere, really long)
-    
+
     # Test insertion into Users Table
-    # cur.execute("""INSERT INTO USERS (users_name, users_gender, users_email, users_password, users_skin_type, suburb_id) 
+    # cur.execute("""INSERT INTO USERS (users_name, users_gender, users_email, users_password, users_skin_type, suburb_id)
     #             VALUES ('Lokesh', 'M', 'lkaggarwal1997@gmail.com', 'hfjsufusyfuxjkskirfucd', 2, 949126420277755905);""")
-    
+
     # Test insertion into Family Members Table
-    # cur.execute("""INSERT INTO FAMILY_MEMBER (fm_name, fm_gender, fm_skin_type, users_id) 
-    #             VALUES 
+    # cur.execute("""INSERT INTO FAMILY_MEMBER (fm_name, fm_gender, fm_skin_type, users_id)
+    #             VALUES
     #             ('Lokesh Jr 1', 'M', 3, 949129620564049921),
     #             ('Lokesh Jr 2', 'F', 1, 949129620564049921);""")
-    
+
+    # Test insertion into SSReminder Table
+    # cur.execute("""INSERT INTO SSREMINDER (ssreminder_type, ssreminder_date, ssreminder_time, ssreminder_weekday, ssreminder_title, ssreminder_notes, ssreminder_color_code, ssreminder_status)
+    #             VALUES
+    #             ('O', '2024-03-07', '13:00:00', 'MO', 'Playground', 'Add twice to Lokesh Jr 1', 'Y', 'P');""")
+
     conn.commit()
     conn.close()
 
