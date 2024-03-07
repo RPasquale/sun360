@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
-
+import React, { useState, useEffect, useContext } from 'react';
+import UserContext from '../UserContext'; 
 function ReminderSettings({ userId }) {
+  const { user } = useContext(UserContext);
+  const userId = user ? user.id : null;
   const [reminders, setReminders] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);

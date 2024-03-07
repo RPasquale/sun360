@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import UserContext from '../UserContext';
 
 function SunScreenTracker({ userId }) { // Assuming we have the user's ID
+  const { user } = useContext(UserContext);
+  const userId = user ? user.id : null;
   const [lastApplication, setLastApplication] = useState(null);
   const [nextApplicationDue, setNextApplicationDue] = useState(null);
   const [isLoading, setIsLoading] = useState(false);

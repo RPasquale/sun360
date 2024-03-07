@@ -4,7 +4,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 1rem;
-    background-color: yellow;
+    background-color: rgb(242, 245, 41);
   }
   
   .navbar-left, 
@@ -40,7 +40,7 @@
     justify-content: space-around; 
     height: 25px; 
     width: 35px; 
-    background-color: #4CAF50; 
+
   }
   
   .dropdown-btn:focus {

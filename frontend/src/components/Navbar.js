@@ -29,7 +29,8 @@ function Navbar() {
     <nav className="navbar">
       <div className="navbar-left">
         <button onClick={toggleDropdown} className="dropdown-btn">
-          <div>-</div>
+          <div>😎</div>
+
         </button>
         {isDropdownOpen && (
           <div className={`dropdown-content ${isDropdownOpen ? 'open' : ''}`}>
@@ -43,7 +44,7 @@ function Navbar() {
         )}
       </div>
       <div className="navbar-center">
-        <Link to="/" className="brand-logo">Sun360</Link>
+        <Link to="/home" className="brand-logo">Sun360</Link>
       </div>
       <div className="navbar-right">
         {isLoggedIn ? (

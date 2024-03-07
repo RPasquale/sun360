@@ -5,6 +5,7 @@ import HomePage from './components/HomePage';
 import LoginPage from './components/LoginPage';
 import RegisterPage from './components/RegisterPage';
 import Navbar from './components/Navbar';
+import Reminders from './components/Reminders';
 import { UserProvider } from './components/UserContext';
 
 const API_BASE_URL = 'http://localhost:5000'; // Replace with your Flask app's URL
@@ -28,10 +29,11 @@ function App() {
       <Router>
         <div className="app-container">
           <Navbar />
-          <Routes> {/* Updated from Switch to Routes */}
+          <Routes> 
             <Route path="/home" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/reminders" element={<Reminders />} />
           </Routes>
         </div>
       </Router>

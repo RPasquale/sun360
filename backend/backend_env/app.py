@@ -164,6 +164,13 @@ def manage_sunscreen_reminders(user_id):
 
     elif request.method == 'POST':
         data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        # Ensure that required fields are present in the data
+        if 'ssreminder_freq' not in data or 'ssreminder_time' not in data:
+            return jsonify({'error': 'Missing data for reminder frequency or time'}), 400
+        data = request.get_json()
         new_reminder = SSReminder(user_id=user_id, **data)
         db.session.add(new_reminder)
         db.session.commit()
@@ -333,7 +340,13 @@ def get_clothing_recommendations():
     print(data)
     return jsonify(recommendations)
 
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({'error': 'Not found'}), 404
 
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify({'error': 'Internal server error'}), 500
 ########################################################################
 # FAKE Database:
 
