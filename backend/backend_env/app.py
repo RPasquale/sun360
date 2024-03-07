@@ -102,15 +102,22 @@ def create_user():
 
         # Hash the password
         hashed_password = generate_password_hash(data['password'], method='pbkdf2:sha256')
-        new_user = User(user_name=data['username'], user_email=data['email'], hashed_password=hashed_password, **data) 
+        new_user = User(
+            user_name=data['username'],
+            user_email=data['email'],
+            user_skin_type=data.get('skin_type', 'Default'),  # Using .get() allows for optional fields
+            user_gender=data.get('gender', 'Prefer not to say'),
+            hashed_password=hashed_password
+        )
 
         db.session.add(new_user)
         db.session.commit()
         login_user(new_user)  
         return jsonify(new_user.to_dict()), 201
 
-    except Exception as e:  # Catch any unexpected errors
-        print(f"Registration Error: {e}") 
+    except Exception as e:
+        import traceback
+        traceback.print_exc()  # This prints the full stack trace
         return jsonify({'error': 'Unexpected registration error'}), 500
 
 @login_manager.user_loader
