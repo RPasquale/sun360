@@ -154,17 +154,28 @@ function ReminderSettings() {
 
       <h3>Add New Reminder</h3>
       <form onSubmit={handleAddReminder}>  
-          {/* Input fields for frequency, UV threshold, etc. */}
-          <input type="text" value={newReminderFrequency} onChange={(e) => setNewReminderFrequency(e.target.value)} placeholder="Frequency (e.g., daily)"/>
-          {/* ... Other input fields */}
+    <input type="text" value={newReminderFrequency} onChange={(e) => setNewReminderFrequency(e.target.value)} placeholder="Frequency (e.g., daily)"/>
+    
+     {/* UV Index Threshold */}
+    <input type="number" value={newReminderUVThreshold} onChange={(e) => setNewReminderUVThreshold(e.target.value)} placeholder="UV Index Threshold (Optional)"/>
 
-          {/* Reminder Times (Already in place)*/} 
-          <div>
-              {/* ... (Your existing time input logic) ... */}
-          </div> 
+    {/* Temperature Alert  */}
+    <label htmlFor="tempAlert">Temperature Alert:</label>
+    <input type="checkbox" id="tempAlert" name="tempAlert" checked={newReminderTempAlert} onChange={(e) => setNewReminderTempAlert(e.target.checked)}/> 
 
-          <button type="submit">Add Reminder</button>
-      </form>
+    {/* Reminder Times */} 
+    <div>
+        {newReminderTimes.map((time, index) => ( 
+            <div key={index}> 
+                <input type="time" value={time} onChange={(e) => handleTimeChange(index, e.target.value)} />
+                <button onClick={() => handleTimeRemoval(index)}>Remove Time</button>  
+            </div> 
+       ))}
+       <button onClick={handleAddReminderTime}>Add Time</button>  
+    </div> 
+
+    <button type="submit">Add Reminder</button>
+ </form>
     </div>
   );
 }
