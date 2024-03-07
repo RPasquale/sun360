@@ -7,75 +7,89 @@
     background-color: yellow;
   }
   
-  .navbar-left, .navbar-center, .navbar-right {
+  .navbar-left, 
+  .navbar-center, 
+  .navbar-right {
     display: flex;
-    justify-content: center;
+    justify-content: center; /* Centers content horizontally */
     align-items: center;
   }
+  
   .navbar-left {
-    display: flex; /* Allow for better spacing control */
-    align-items: center; /* Vertically center content */
+    display: flex;
+    align-items: center;
+    position: relative; 
   }
   
-  .brand-logo {
-    font-size: 1.5rem;
-    font-weight: bold;
-    text-decoration: none; /* Remove underline from links */
-    color: black; /* Set text color for the logo */
+  .brand-logo { 
+    /* Previous styles */
+    font-size: 1.5rem; 
+    font-weight: bold; 
+    text-decoration: none; 
+    color: black; 
   }
   
   .dropdown-btn {
-    background: none;
-    border: none;
+    /* Previous styles */
+    background: none; 
+    border: none; 
     cursor: pointer;
     padding: 0;
     display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-    height: 25px; /* Adjust as needed */
-    width: 35px; /* Adjust as needed */
-    background-color: #4CAF50; /* Green background for visibility */
-}
+    flex-direction: column; 
+    justify-content: space-around; 
+    height: 25px; 
+    width: 35px; 
+    background-color: #4CAF50; 
+  }
   
   .dropdown-btn:focus {
     outline: none;
   }
   
   .dropdown-btn div {
-    height: 3px; /* Thickness of the bar */
-    background-color: #fff; /* Bar color */
-    margin: 3px 0; /* Spacing between bars */
+    height: 3px; 
+    background-color: #fff;
+    margin: 3px 0; 
     transition: 0.3s;
-}
-  
-  @media screen and (max-width: 768px){
+  }
+ 
   .dropdown-content {
-    display: none; /* Remove this line to let React manage the display */
+    display: flex; 
+    flex-direction: column; /* Align children vertically */
     position: absolute;
-    background-color: #f9f9f9;
+    top: 100%; /* Changed from bottom: 0; to drop down below the button */
+    left: 0; /* Ensure it aligns with the left edge of the navbar-left */
+    background-color: #f9f9f9; 
     min-width: 120px;
     max-width: 250px;
     box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
     z-index: 1;
     flex-wrap: wrap;
-    font-size: 14px; /* Adjust as needed */
-    padding: 8px 12px;
-    transform: translateY(0); /* Initial transform, no offset */
-}
-}
-  .dropdown-content a {
-    color: black;
-    padding: 12px 16px;
-    text-decoration: none;
-    display: block;
-}
-  
-  .dropdown-btn:hover .dropdown-content {
-    display: block;
+    font-size: 14px;
+    padding: 0;
   }
+  .dropdown-content a {
+    text-decoration: none;
+    color: black; /* Or any color you prefer */
+    padding: 8px 12px; /* Add padding for each link */
+    display: block; /* This makes each link full width */
+    white-space: nowrap; /* Prevent text wrapping */
+}
+
+  /* Hover effect for dropdown options */
   .dropdown-content a:hover {
-    background-color: #f1f1f1;
-  }  
+      background-color: #e0e0e0; 
+  }
+  
+  /* Media query for smaller screens */
+  @media screen and (max-width: 768px) { 
+    .dropdown-content {
+      max-width: 180px; /* Adjust as needed for smaller screens */
+    }
+  }
+  
   .dropdown-content.open {
     display: block;
-}
+  }
+  
