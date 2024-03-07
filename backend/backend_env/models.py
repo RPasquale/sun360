@@ -8,6 +8,7 @@ class User(db.Model):
     user_email = db.Column(db.String(120), unique=True, nullable=False)
     user_skin_type = db.Column(db.String(50), nullable=False) 
     user_gender = db.Column(db.String(20), nullable=False)  
+    locations = db.relationship('Location', backref='user', lazy=True)
 
     ss_applications = db.relationship('SSAppl', backref='user', lazy=True)
     ss_reminders = db.relationship('SSReminder', backref='user', lazy=True)
@@ -32,7 +33,9 @@ class Location(db.Model):
     temp_alerts = db.relationship('TempAlert', backref='location', lazy=True)
     suburbs = db.relationship('Suburb', backref='location', lazy=True)
     uv_records = db.relationship('UVRecord', backref='location', lazy=True)
-    users = db.relationship('User', backref='location', lazy=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=True) 
+    users = db.relationship('User', backref='locations', lazy=True)  
+    user = db.relationship('User', backref='locations') 
         
     def to_dict(self):
         return {

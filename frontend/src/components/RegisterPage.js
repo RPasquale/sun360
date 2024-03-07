@@ -1,51 +1,56 @@
-import React, { useState } from 'react';
-import UserContext from './UserContext'; 
-
+import React, { useState, useContext } from 'react'; // Import useContext
+import UserContext from './UserContext';
 
 function RegisterPage() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');  
-  const [location, setLocation] = useState(''); 
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [location, setLocation] = useState('');
   const [skinType, setSkinType] = useState('');
-  const [gender, setGender] = useState(''); 
+  const [gender, setGender] = useState('');
   const [error, setError] = useState(null);
+
+  // Correctly using useContext at the component level
+  const { register } = useContext(UserContext); // Update to new name 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Basic validation 
+    // Basic validation
     if (password !== confirmPassword) {
       setError('Passwords do not match');
-      return; 
+      return;
     }
 
     try {
-      const response = await fetch('/users', { // Replace '/users' with your actual registration route
+      const response = await fetch('http://127.0.0.1:5000/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           username,
-          email, 
+          email,
           password,
           location,
-          skin_type: skinType, // Assuming you have skin_type in your backend model
-          gender
+          skin_type: skinType,
+          gender,
         }),
       });
-      if (!response.ok) {
-        const errorData = await response.json(); 
-        throw new Error(errorData.message || 'Registration failed'); 
+  
+      console.log("Response:", response); // Log the entire response
+
+
+      if (response.ok) { // 'if' statement on next line
+        const userData = await response.json(); 
+        await register(username, password);  
+        window.location.href = '/'; 
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Registration failed');
       }
-
-      const userData = await response.json(); // Assuming backend sends user data 
-      const { login } = useContext(UserContext);
-      await login(username, password); // Log the user in
-      window.location.href = '/'; // Redirect on success ;  
-
     } catch (error) {
-      setError(error.message);
+      console.error('Registration Error:', error);
+      setError('Registration failed. Please try again.'); 
     }
   };
 
@@ -123,4 +128,13 @@ function RegisterPage() {
 }
 
 export default RegisterPage;
+
+
+
+
+
+
+
+
+   
 

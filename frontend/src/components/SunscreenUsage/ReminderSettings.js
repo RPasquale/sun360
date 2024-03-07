@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
-
-function ReminderSettings({ userId }) {
+import React, { useState, useEffect, useContext } from 'react';
+import UserContext from '../UserContext'; 
+function ReminderSettings() {
+  const { user } = useContext(UserContext);
+  const userId = user ? user.id : null;
   const [reminders, setReminders] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -20,6 +22,7 @@ function ReminderSettings({ userId }) {
         if (!response.ok) {
           throw new Error('Failed to fetch reminders');
         }
+        console.log("Raw Response:", response); 
         const data = await response.json();
         setReminders(data);
       } catch (error) {
@@ -48,7 +51,8 @@ function ReminderSettings({ userId }) {
   };
 
   // Function to add a new reminder
-  const handleAddReminder = async () => {
+  const handleAddReminder = async (event) => {
+    event.preventDefault();
     setIsLoading(true);
     try {
       const response = await fetch(`/users/${userId}/sunscreen-reminders`, {
@@ -135,11 +139,43 @@ function ReminderSettings({ userId }) {
           <p>Temperature Alert: {reminder.temp_alert ? 'Yes' : 'No'}</p> 
           <button onClick={() => handleUpdateReminder(reminder.ssreminder_id, /* ... */)}>Edit</button>
           <button onClick={() => handleDeleteReminder(reminder.ssreminder_id)}>Delete</button>
+          {/* Reminder Times */} 
+            <div>
+                {newReminderTimes.map((time, index) => ( 
+                    <div key={index}> 
+                        <input type="time" value={time} onChange={(e) => handleTimeChange(index, e.target.value)} />
+                        <button onClick={() => handleTimeRemoval(index)}>Remove Time</button>  
+                    </div> 
+                ))}
+                <button onClick={handleAddReminderTime}>Add Time</button>  
+            </div> 
         </div>
       ))}
 
       <h3>Add New Reminder</h3>
-      {/* ... Form for adding a new reminder ... */}
+      <form onSubmit={handleAddReminder}>  
+    <input type="text" value={newReminderFrequency} onChange={(e) => setNewReminderFrequency(e.target.value)} placeholder="Frequency (e.g., daily)"/>
+    
+     {/* UV Index Threshold */}
+    <input type="number" value={newReminderUVThreshold} onChange={(e) => setNewReminderUVThreshold(e.target.value)} placeholder="UV Index Threshold (Optional)"/>
+
+    {/* Temperature Alert  */}
+    <label htmlFor="tempAlert">Temperature Alert:</label>
+    <input type="checkbox" id="tempAlert" name="tempAlert" checked={newReminderTempAlert} onChange={(e) => setNewReminderTempAlert(e.target.checked)}/> 
+
+    {/* Reminder Times */} 
+    <div>
+        {newReminderTimes.map((time, index) => ( 
+            <div key={index}> 
+                <input type="time" value={time} onChange={(e) => handleTimeChange(index, e.target.value)} />
+                <button onClick={() => handleTimeRemoval(index)}>Remove Time</button>  
+            </div> 
+       ))}
+       <button onClick={handleAddReminderTime}>Add Time</button>  
+    </div> 
+
+    <button type="submit">Add Reminder</button>
+ </form>
     </div>
   );
 }

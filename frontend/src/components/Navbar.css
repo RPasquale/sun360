@@ -1,0 +1,95 @@
+/* navbar.css */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background-color: rgb(242, 245, 41);
+  }
+  
+  .navbar-left, 
+  .navbar-center, 
+  .navbar-right {
+    display: flex;
+    justify-content: center; /* Centers content horizontally */
+    align-items: center;
+  }
+  
+  .navbar-left {
+    display: flex;
+    align-items: center;
+    position: relative; 
+  }
+  
+  .brand-logo { 
+    /* Previous styles */
+    font-size: 1.5rem; 
+    font-weight: bold; 
+    text-decoration: none; 
+    color: black; 
+  }
+  
+  .dropdown-btn {
+    /* Previous styles */
+    background: none; 
+    border: none; 
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    flex-direction: column; 
+    justify-content: space-around; 
+    height: 25px; 
+    width: 35px; 
+
+  }
+  
+  .dropdown-btn:focus {
+    outline: none;
+  }
+  
+  .dropdown-btn div {
+    height: 3px; 
+    background-color: #fff;
+    margin: 3px 0; 
+    transition: 0.3s;
+  }
+ 
+  .dropdown-content {
+    display: flex; 
+    flex-direction: column; /* Align children vertically */
+    position: absolute;
+    top: 100%; /* Changed from bottom: 0; to drop down below the button */
+    left: 0; /* Ensure it aligns with the left edge of the navbar-left */
+    background-color: #f9f9f9; 
+    min-width: 120px;
+    max-width: 250px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+    flex-wrap: wrap;
+    font-size: 14px;
+    padding: 0;
+  }
+  .dropdown-content a {
+    text-decoration: none;
+    color: black; /* Or any color you prefer */
+    padding: 8px 12px; /* Add padding for each link */
+    display: block; /* This makes each link full width */
+    white-space: nowrap; /* Prevent text wrapping */
+}
+
+  /* Hover effect for dropdown options */
+  .dropdown-content a:hover {
+      background-color: #e0e0e0; 
+  }
+  
+  /* Media query for smaller screens */
+  @media screen and (max-width: 768px) { 
+    .dropdown-content {
+      max-width: 180px; /* Adjust as needed for smaller screens */
+    }
+  }
+  
+  .dropdown-content.open {
+    display: block;
+  }
+  
