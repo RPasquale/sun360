@@ -3,13 +3,12 @@ import { Link } from 'react-router-dom';
 import ReminderSettings from './SunscreenUsage/ReminderSettings';
 import SunscreenTracker from './SunscreenUsage/SunscreenTracker';
 import './Reminders.css';
-import { UserContext } from './UserContext';
-
+import UserContext from './UserContext';
 
 
 function Reminders() {
     const { user } = useContext(UserContext);
-    const userId = user.id;
+    const userId = user ? user.id : null;
     const [reminder, setReminder] = useState({
     date: '',
     time: '',

@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
 import UserContext from '../UserContext';
-
-function SunScreenTracker({ userId }) { // Assuming we have the user's ID
+function SunScreenTracker() { // Assuming we have the user's ID
   const { user } = useContext(UserContext);
   const userId = user ? user.id : null;
+
   const [lastApplication, setLastApplication] = useState(null);
   const [nextApplicationDue, setNextApplicationDue] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -51,21 +51,40 @@ function SunScreenTracker({ userId }) { // Assuming we have the user's ID
   // 3. Record a New Sunscreen Application 
   const handleSunscreenApplication = async () => {
     setIsLoading(true);
+    
+  if (!userId) {
+    setIsLoading(false);
+    console.error("User ID is null. Make sure the user is logged in.");
+    setError("You must be logged in to record a sunscreen application.");
+    return; // Exit the function if userId is null
+  }
+    // Create a new date object for the application timestamp
+    const applicationTimestamp = new Date();
+  
+    // Example static values for uvIndex and temperature
+    // In a real application, these might come from user input or a weather API
+    const uvIndex = 5; // Example static value
+    const temperature = 25; // Example static value in Celsius
+  
     try {
       const response = await fetch(`/users/${userId}/sunscreen-reminders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ /* Data about the application if needed */ }),  
+        body: JSON.stringify({
+          applicationTimestamp: applicationTimestamp.toISOString(), // Convert to ISO string for compatibility
+          uvIndex: uvIndex,
+          temperature: temperature,
+        }),
       });
       if (!response.ok) {
         throw new Error('Failed to record application');
       }
       // Update state to reflect the new application
       const newApplicationData = await response.json();
-      setLastApplication(new Date()); 
-      calculateNextApplicationDue(newApplicationData); 
+      setLastApplication(applicationTimestamp); // Set the state with the new application date
+      calculateNextApplicationDue(newApplicationData); // You might need to adjust this based on actual data received
     } catch (error) {
-      setError(error);
+      setError(error.message);
     } finally {
       setIsLoading(false);
     }

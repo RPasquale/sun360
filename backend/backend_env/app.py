@@ -176,6 +176,33 @@ def manage_sunscreen_reminders(user_id):
         db.session.commit()
         return jsonify(new_reminder.to_dict()), 201 
 
+@app.route('/users/<int:user_id>/sunscreen-reminders/<int:ssreminder_id>', methods=['PUT'])
+def update_sunscreen_reminder(user_id, ssreminder_id):
+    user = User.query.get_or_404(user_id)
+    reminder = SSReminder.query.get_or_404(ssreminder_id)
+
+    if reminder.user_id != user_id:
+        return jsonify({'error': 'Unauthorized'}), 401  # Authorization check
+
+    data = request.get_json()
+    for key, value in data.items():
+        setattr(reminder, key, value) 
+    db.session.commit()
+    return jsonify(reminder.to_dict()) 
+
+@app.route('/users/<int:user_id>/sunscreen-reminders/<int:ssreminder_id>', methods=['DELETE'])
+def delete_sunscreen_reminder(user_id, ssreminder_id):
+    user = User.query.get_or_404(user_id) 
+    reminder = SSReminder.query.get_or_404(ssreminder_id)
+
+    if reminder.user_id != user_id:
+        return jsonify({'error': 'Unauthorized'}), 401  # Authorization check
+
+    db.session.delete(reminder)
+    db.session.commit()
+    return '', 204  
+
+
 # Temp Alerts (assuming read-only)
 # Routes for Temp Alerts
 @app.route('/temp-alerts/<int:temp_alert_id>', methods=['GET'])
@@ -285,33 +312,6 @@ def get_temperature_history(location_id):
     result = [{'timestamp': record.uvrecord_timestamp, 'temperature': record.temp_value} 
               for record in records]
     return jsonify(result)
-
-@app.route('/users/<int:user_id>/sunscreen-reminders/<int:ssreminder_id>', methods=['PUT'])
-def update_sunscreen_reminder(user_id, ssreminder_id):
-    user = User.query.get_or_404(user_id)
-    reminder = SSReminder.query.get_or_404(ssreminder_id)
-
-    if reminder.user_id != user_id:
-        return jsonify({'error': 'Unauthorized'}), 401  # Authorization check
-
-    data = request.get_json()
-    for key, value in data.items():
-        setattr(reminder, key, value) 
-    db.session.commit()
-    return jsonify(reminder.to_dict()) 
-
-@app.route('/users/<int:user_id>/sunscreen-reminders/<int:ssreminder_id>', methods=['DELETE'])
-def delete_sunscreen_reminder(user_id, ssreminder_id):
-    user = User.query.get_or_404(user_id) 
-    reminder = SSReminder.query.get_or_404(ssreminder_id)
-
-    if reminder.user_id != user_id:
-        return jsonify({'error': 'Unauthorized'}), 401  # Authorization check
-
-    db.session.delete(reminder)
-    db.session.commit()
-    return '', 204  
-
 
 @app.route('/clothing-recommendations', methods=['POST'])
 def get_clothing_recommendations():
