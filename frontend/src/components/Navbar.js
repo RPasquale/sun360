@@ -41,7 +41,7 @@ function Navbar() {
         </div>
       </div>
       <div className="navbar-center">
-        <Link to="/home" className="brand-logo">
+        <Link to="/" className="brand-logo">
           Sun360
         </Link>
       </div>

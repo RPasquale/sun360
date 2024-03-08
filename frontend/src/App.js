@@ -30,7 +30,7 @@ function App() {
         <div className="app-container">
           <Navbar />
           <Routes> 
-            <Route path="/home" element={<HomePage />} />
+            <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/reminders" element={<Reminders />} />
