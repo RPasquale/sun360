@@ -1,9 +1,13 @@
 // RegisterPage.js
-import React, { useState, useContext } from "react"; // Import useContext
+import React, { useState } from "react";
 
-import "./Register.css"; // Import CSS file for register page styling
+import axios from "../../api/axios";
 import SkinColorPalette from "../basic-ui/elements/SkinColorPalette";
 import FamilyMemberCard from "./FamilyMemberCard";
+
+import "./Register.css";
+
+const REGISTER_URL = "http://127.0.0.1:5000/users";
 
 function Register() {
   const [name, setName] = useState("");
@@ -11,11 +15,13 @@ function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [age, setAge] = useState(18);
-  const [location, setLocation] = useState("");
+  const [suburb, setSuburb] = useState("");
+  const [postcode, setPostcode] = useState("");
   const [skinTone, setSkinTone] = useState(0);
   const [gender, setGender] = useState("");
   const [familyMembers, setFamilyMembers] = useState([]);
-  const [error, setError] = useState(null);
+  const [registerStatus, setRegisterStatus] = useState(null);
+  const [registerRemarks, setRegisterRemarks] = useState("");
 
   const handleFamilyMemberChange = (id, member) => {
     if (id === familyMembers.length + 1) {
@@ -54,45 +60,54 @@ function Register() {
 
     // Basic validation
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setRegisterStatus('e')
+      setRegisterRemarks("Passwords do not match");
       return;
     }
 
     try {
-      const response = await fetch("http://127.0.0.1:5000/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-          location,
-          skin_type: skinTone,
-          gender,
+      setRegisterStatus('p')
+      setRegisterRemarks("Registering your details");
+      
+      await axios.post(
+        REGISTER_URL,
+        JSON.stringify({
+          users_name: name,
+          users_email: email,
+          users_password: password,
+          users_age: age,
+          users_skin_type: skinTone,
+          users_gender: gender,
+          suburb_name: suburb,
+          suburb_postcode: postcode,
+          users_family_members: [
+            ...familyMembers.map((member) => ({
+              fm_name: member.name,
+              fm_age: member.age,
+              fm_gender: member.gender,
+              fm_skin_type: member.skinTone,
+            })),
+          ],
         }),
-      });
+        {
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Credentials": true },
+          withCredentials: true,
+        }
+      );
 
-      console.log("Response:", response); // Log the entire response
-
-      if (response.ok) {
-        // 'if' statement on next line
-        const userData = await response.json();
-        // await register(name, password);
-        window.location.href = "/";
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Registration failed");
-      }
+      setRegisterStatus('s')
+      setRegisterRemarks("Registration successful. Please proceed to login.");
+      
     } catch (error) {
       console.error("Registration Error:", error);
-      setError("Registration failed. Please try again.");
+      setRegisterStatus('e')
+      setRegisterRemarks("Registration failed. Please try again.");
     }
   };
 
   return (
     <div className="register-container">
       <h2>Register</h2>
-      {error && <p className="error-message">{error}</p>}
       <form onSubmit={handleSubmit} className="register-form">
         <div className="form-row">
           <label htmlFor="name" className="form-label">
@@ -155,6 +170,18 @@ function Register() {
           />
         </div>
         <div className="form-row">
+          <label htmlFor="suburb" className="form-label">
+            Suburb
+          </label>
+          <input
+            type="text"
+            name="suburb"
+            id="suburb"
+            value={suburb}
+            onChange={(e) => setSuburb(e.target.value)}
+          />
+        </div>
+        <div className="form-row">
           <label htmlFor="postcode" className="form-label">
             Postcode
           </label>
@@ -162,8 +189,8 @@ function Register() {
             type="text"
             name="postcode"
             id="postcode"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
+            value={postcode}
+            onChange={(e) => setPostcode(e.target.value)}
           />
         </div>
         <div className="form-row skin-tone">
@@ -226,6 +253,10 @@ function Register() {
           Add Family Member
         </button>
 
+        {registerStatus === "s" && <p className="success-message">{registerRemarks}</p>}
+        {registerStatus === "p" && <p className="pending-message">{registerRemarks}</p>}
+        {registerStatus === "e" && <p className="error-message">{registerRemarks}</p>}
+      
         <button type="submit">Register</button>
       </form>
     </div>

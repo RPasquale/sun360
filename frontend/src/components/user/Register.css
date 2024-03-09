@@ -16,6 +16,11 @@ h2 {
   color: red;
 }
 
+.success-message, .pending-message {
+  color: black;
+  font-style: italic;
+}
+
 .register-form {
   display: flex;
   flex-direction: column;
