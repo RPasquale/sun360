@@ -1,132 +1,221 @@
 from flask import Flask, jsonify, request
-from models import db, Incidence, Location, Suburb, User, UVRecord, TempAlert,SSReminder, Mortality  # Import all models
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from models import Users, FamilyMember, Suburb, SSReminder, CancerStatistics,  CancerIncidence
+import secrets
 from werkzeug.security import generate_password_hash, check_password_hash
-from faker import Faker 
 from flask_cors import CORS
+# from config import Config
+import os  # For environment variables
+from dotenv import load_dotenv
+from extensions import db, login_manager
+from flask import Flask
+from sqlalchemy import create_engine, func, and_
+from sqlalchemy.engine.reflection import Inspector
 
-import os  # For environment variables 
-# If we build any ML or AI models import below
-#from your_ml_models import ClothingRecommender # Reminder to build clothing recommender
+load_dotenv()
+
+#######################################################
+
 app = Flask(__name__)
-login_manager = LoginManager()
-login_manager.init_app(app)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
+
+db.init_app(app)
+CORS(app, supports_credentials=True, allow_headers="*", origins="*")
+
+
+# Add this command to your app.py
+@app.cli.command("check-tables")
+def check_tables():
+    """Check if tables exist in the database."""
+    engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
+    inspector = Inspector.from_engine(engine)
+    tables = inspector.get_table_names()
+    if tables:
+        print("Found tables in the database:")
+        for table in tables:
+            print(f"- {table}")
+    else:
+        print("No tables found in the database.")
+
+
+@app.cli.command("create-db")
+def create_db():
+    """Create database tables."""
+    with app.app_context():
+        db.create_all()
+
 #######################################################
-# Real Data
-
-'''
-# Real Data
-# Database Configuration
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get('DATABASE_URL')  # Load from environment variable
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-db.init_app(app) # Initialize SQLAlchemy
-
-'''
-#######################################################
-# Fake data
-
-
-# Database config
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get('DATABASE_URL', 'sqlite:///app.db') 
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-CORS(app)  
-
-db = SQLAlchemy(app)
-
 # Basic Routes (Placeholders )
+
+
 @app.route('/')
 def index():
     return jsonify({'message': 'Welcome to the Sun360 API!'})
 
 
-# Login, Register, Logout
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({'error': 'Not found'}), 404
+
+
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify({'error': 'Internal server error'}), 500
+
+########################################################
+# Middlewares
+def check_header():
+    # Check if the 'Authorization' header is present
+    if 'Authorization' not in request.headers:
+        return jsonify({'error': 'Missing Authorization header'}), 401
+
+    if  'Access-ID' not in request.headers:
+        return jsonify({'error': 'Missing Access-ID header'}), 401
+    
+    authorization = request.headers.get('Authorization')
+    access_id = int(request.headers.get('Access-ID'))
+    
+    user = Users.query.filter_by(users_id=access_id).first()
+    if not user:
+        return jsonify({'error': 'Invalid Access ID'}), 401
+    
+    if user.users_access_token != authorization:
+        return jsonify({'error': 'Invalid Authorization'}), 401
+    
+    return None
+
+# Apply the middleware to specific routes
+@app.before_request
+def protect_route():
+    # Only apply the middleware to specific routes
+    if request.endpoint in ['logout']:  # List the endpoints where you want to apply the middleware
+        return check_header()
+
+
+#########################################################
+# USERS, Login, Register, Logout
+
+def login_user(user):
+    try:
+        access_token = secrets.token_hex(32)
+        Users.query.filter_by(users_id=user.users_id).update({"users_access_token": access_token})
+        db.session.commit()
+        return access_token
+    except:
+        return None 
+
+def logout_user(users_id):
+    try:
+        Users.query.filter_by(users_id=users_id).update({"users_access_token": None})
+        db.session.commit()
+        return True
+    except:
+        return False  
+
 @app.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
-    username = data.get('username')
-    password = data.get('password')
+    email = data.get('users_email')  # Use email to match users_email
+    password = data.get('users_password')
 
-    user = User.query.filter_by(username=username).first()  
-    hashed_password = generate_password_hash(password, method='pbkdf2:sha256')  
-
-    if user and check_password_hash(user.hashed_password, password): # hashing passwords
-        login_user(user)
-        return jsonify({'message': 'Login successful'}), 200
+    user = Users.query.filter_by(users_email=email).first()
+    if user and check_password_hash(user.users_password, password):
+        access_token = login_user(user)
+        return jsonify({'message': 'Login successful', 'access_token': access_token, 'access_id': '{}'.format(user.users_id)}), 200
     else:
-        return jsonify({'error': 'Invalid credentials'}), 401 
+        return jsonify({'error': 'Invalid credentials'}), 401
 
-@app.route('/logout')
-@login_required
+
+@app.route('/logout', methods=['POST'])
 def logout():
-    logout_user()
-    return jsonify({'message': 'Logged out'}), 200
-# LOCATIONS
-@app.route('/locations', methods=['GET'])
-def get_locations():
-    all_locations = Location.query.all()
-    result = [loc.to_dict() for loc in all_locations]  
-    return jsonify(result)
+    users_id = request.headers.get('Access-ID')
+    if logout_user(users_id):
+        return jsonify({'message': 'Logged out'}), 200
+    else:
+        return jsonify({'error': 'Unable to logout'}), 401
 
-@app.route('/locations/<int:location_id>', methods=['GET']) 
-def get_location(location_id):
-    location = Location.query.get_or_404(location_id)
-
-    # Include related data if needed
-    result = location.to_dict()
-    if request.args.get('include_suburbs'): 
-        result['suburbs'] = [suburb.to_dict() for suburb in location.suburbs]
-    # Add similar logic for other related data (temp_alerts, uv_records) as required
-
-    return jsonify(result) 
 
 def is_valid_password(password):
     """Checks basic password requirements"""
     if len(password) < 8:  # Example: Minimum 8 characters
         return False
-    # You can add more checks: uppercase, lowercase, numbers, symbols, etc. 
+    # You can add more checks: uppercase, lowercase, numbers, symbols, etc.
     return True
 
-# USERS
+
 @app.route('/users', methods=['POST'])
 def create_user():
     data = request.get_json()
 
     try:
-        # Thoroughly validate user data before creating user
-        if User.query.filter_by(user_email=data['email']).first(): 
+        
+        if Users.query.filter_by(users_email=data.get('users_email')).first():
             return jsonify({'error': 'Email already exists'}), 400
 
-        if not is_valid_password(data['password']): 
+        if not is_valid_password(data.get('users_password')):
             return jsonify({'error': 'Password not strong enough'}), 400
 
-        # Hash the password
-        hashed_password = generate_password_hash(data['password'], method='pbkdf2:sha256')
-        new_user = User(
-            user_name=data['username'],
-            user_email=data['email'],
-            user_skin_type=data.get('skin_type', 'Default'),  # Using .get() allows for optional fields
-            user_gender=data.get('gender', 'Prefer not to say'),
-            hashed_password=hashed_password
-        )
+        hashed_password = generate_password_hash(
+            data.get('users_password'), method='pbkdf2:sha256')
+
+        # Correctly referencing the 'suburb_name' attribute in the Suburb model
+        suburb = Suburb.query.filter(and_(
+            func.lower(Suburb.suburb_name) == data.get('suburb_name').lower(),
+            Suburb.suburb_postcode == data.get('suburb_postcode')
+        )).first()
+        
+        if suburb is None:
+            # Creating a new Suburb instance with the correct attribute
+            suburb = Suburb(suburb_name=data.get('suburb_name'),
+                            suburb_postcode=data.get('suburb_postcode'))
+            db.session.add(suburb)
+            db.session.commit()
+
+        new_user = Users(
+            users_name=data.get('users_name'),
+            users_email=data.get('users_email'),
+            users_password=hashed_password,
+            users_age=data.get('users_age'),
+            users_skin_type=data.get('users_skin_type', 2),
+            users_gender=data.get('users_gender', 'X'),
+            users_access_token=None,
+            suburb_id=suburb.suburb_id)
 
         db.session.add(new_user)
         db.session.commit()
-        login_user(new_user)  
+
+        # Get updated user for getting the autogenerated ID
+        new_user = Users.query.filter_by(
+            users_email=data.get('users_email')).first()
+
+        family_members = data.get('users_family_members')
+        if (family_members and len(family_members) > 0):
+            for fm_idx in range(len(family_members)):
+                data_fm = family_members[fm_idx]
+                new_family_member = FamilyMember(fm_name=data_fm.get('fm_name'),
+                                                 fm_gender=data_fm.get('fm_gender'),
+                                                 fm_age=data_fm.get('fm_age'),
+                                                 fm_skin_type=data_fm.get('fm_skin_type'),
+                                                 users_id=new_user.users_id
+                                                 )
+                db.session.add(new_family_member)
+                db.session.commit()
+
         return jsonify(new_user.to_dict()), 201
 
     except Exception as e:
         import traceback
-        traceback.print_exc()  # This prints the full stack trace
+        traceback.print_exc()  # Print the full stack trace for debugging
         return jsonify({'error': 'Unexpected registration error'}), 500
 
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
 
-@app.route('/users/<int:user_id>', methods=['GET', 'PUT', 'DELETE'])
-def manage_user(user_id):
-    user = User.query.get_or_404(user_id)
+@login_manager.user_loader
+def load_user(users_id):
+    return Users.query.get(int(users_id))
+
+
+@app.route('/users/<int:users_id>', methods=['GET', 'PUT', 'DELETE'])
+def manage_user(users_id):
+    user = Users.query.get_or_404(users_id)
 
     if request.method == 'GET':
         return jsonify(user.to_dict())
@@ -136,14 +225,95 @@ def manage_user(user_id):
         for key, value in data.items():
             setattr(user, key, value)  # Update attributes
         db.session.commit()
-        return jsonify(user.to_dict())  
+        return jsonify(user.to_dict())
 
     elif request.method == 'DELETE':
         db.session.delete(user)
         db.session.commit()
         return '', 204  # Return empty response, status code 204
+#########################################################
+# LOCATIONS
 
-# UV DATA (Simplified)
+
+@app.route('/locations', methods=['GET'])
+def get_locations():
+    all_locations = Suburb.query.all()
+    result = [loc.to_dict() for loc in all_locations]
+    return jsonify(result)
+
+
+@app.route('/locations/<int:location_id>', methods=['GET'])
+def get_location(suburb_name):
+    location = Suburb.query.get_or_404(suburb_name)
+
+    # Include related data if needed
+    result = suburb_name.to_dict()
+    if request.args.get('include_suburbs'):
+        result['suburbs'] = [suburb.to_dict()
+                             for suburb in suburb_name.suburbs]
+    # Add similar logic for other related data (temp_alerts, uv_records) as required
+
+    return jsonify(result)
+
+#########################################################
+# SUNSCREEN REMINDERS
+
+
+@app.route('/users/<int:users_id>/sunscreen-reminders', methods=['GET', 'POST'])
+def manage_sunscreen_reminders(users_id):
+    # Check if the user exists
+    user = Users.query.get_or_404(users_id)
+
+    if request.method == 'GET':
+        reminders = user.ss_reminders  # Fetch reminders via relationship
+        result = [reminder.to_dict() for reminder in reminders]
+        return jsonify(result)
+
+    elif request.method == 'POST':
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+
+        # Ensure that required fields are present in the data
+        if 'ssreminder_freq' not in data or 'ssreminder_time' not in data:
+            return jsonify({'error': 'Missing data for reminder frequency or time'}), 400
+        data = request.get_json()
+        new_reminder = SSReminder(users_id=users_id, **data)
+        db.session.add(new_reminder)
+        db.session.commit()
+        return jsonify(new_reminder.to_dict()), 201
+
+
+@app.route('/users/<int:users_id>/sunscreen-reminders/<int:ssreminder_id>', methods=['PUT'])
+def update_sunscreen_reminder(users_id, ssreminder_id):
+    user = Users.query.get_or_404(users_id)
+    reminder = SSReminder.query.get_or_404(ssreminder_id)
+
+    if reminder.users_id != users_id:
+        return jsonify({'error': 'Unauthorized'}), 401  # Authorization check
+
+    data = request.get_json()
+    for key, value in data.items():
+        setattr(reminder, key, value)
+    db.session.commit()
+    return jsonify(reminder.to_dict())
+
+
+@app.route('/users/<int:users_id>/sunscreen-reminders/<int:ssreminder_id>', methods=['DELETE'])
+def delete_sunscreen_reminder(users_id, ssreminder_id):
+    user = Users.query.get_or_404(users_id)
+    reminder = SSReminder.query.get_or_404(ssreminder_id)
+
+    if reminder.users_id != users_id:
+        return jsonify({'error': 'Unauthorized'}), 401  # Authorization check
+
+    db.session.delete(reminder)
+    db.session.commit()
+    return '', 204
+
+
+#########################################################
+'''# UV DATA (Simplified)
 @app.route('/uv-data', methods=['GET'])
 def get_uv_data():
     # Example: Get all UV records 
@@ -151,58 +321,7 @@ def get_uv_data():
     result = [record.to_dict() for record in uv_records]
     return jsonify(result) 
 
-# SUNSCREEN REMINDERS
-@app.route('/users/<int:user_id>/sunscreen-reminders', methods=['GET', 'POST'])
-def manage_sunscreen_reminders(user_id):
-    # Check if the user exists
-    user = User.query.get_or_404(user_id)  
-
-    if request.method == 'GET':
-        reminders = user.ss_reminders  # Fetch reminders via relationship
-        result = [reminder.to_dict() for reminder in reminders] 
-        return jsonify(result)
-
-    elif request.method == 'POST':
-        data = request.get_json()
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
-        
-        # Ensure that required fields are present in the data
-        if 'ssreminder_freq' not in data or 'ssreminder_time' not in data:
-            return jsonify({'error': 'Missing data for reminder frequency or time'}), 400
-        data = request.get_json()
-        new_reminder = SSReminder(user_id=user_id, **data)
-        db.session.add(new_reminder)
-        db.session.commit()
-        return jsonify(new_reminder.to_dict()), 201 
-
-@app.route('/users/<int:user_id>/sunscreen-reminders/<int:ssreminder_id>', methods=['PUT'])
-def update_sunscreen_reminder(user_id, ssreminder_id):
-    user = User.query.get_or_404(user_id)
-    reminder = SSReminder.query.get_or_404(ssreminder_id)
-
-    if reminder.user_id != user_id:
-        return jsonify({'error': 'Unauthorized'}), 401  # Authorization check
-
-    data = request.get_json()
-    for key, value in data.items():
-        setattr(reminder, key, value) 
-    db.session.commit()
-    return jsonify(reminder.to_dict()) 
-
-@app.route('/users/<int:user_id>/sunscreen-reminders/<int:ssreminder_id>', methods=['DELETE'])
-def delete_sunscreen_reminder(user_id, ssreminder_id):
-    user = User.query.get_or_404(user_id) 
-    reminder = SSReminder.query.get_or_404(ssreminder_id)
-
-    if reminder.user_id != user_id:
-        return jsonify({'error': 'Unauthorized'}), 401  # Authorization check
-
-    db.session.delete(reminder)
-    db.session.commit()
-    return '', 204  
-
-
+#########################################################
 # Temp Alerts (assuming read-only)
 # Routes for Temp Alerts
 @app.route('/temp-alerts/<int:temp_alert_id>', methods=['GET'])
@@ -220,7 +339,7 @@ def get_temp_alerts_for_location(location_id):
         result['temp_alerts'] = [alert.to_dict() for alert in location.temp_alerts]  
 
     return jsonify(result) 
-
+#########################################################
 # Suburbs
 @app.route('/locations/<int:location_id>/suburbs', methods=['GET'])
 def get_suburbs_for_location(location_id):
@@ -228,7 +347,7 @@ def get_suburbs_for_location(location_id):
     suburbs = location.suburbs  # Fetch related suburbs via the relationship
     result = [suburb.to_dict() for suburb in suburbs]
     return jsonify(result)
-
+#########################################################
 # Mortality and Incidence 
 @app.route('/mortality', methods=['GET'])
 def get_mortality_data(): 
@@ -278,7 +397,7 @@ def get_incidence_data():
     incidence_records = query.all()
     result = [record.to_dict() for record in incidence_records]
     return jsonify(result)
-
+#########################################################
 # Current conditions for Locations
 @app.route('/locations/<int:location_id>/current-conditions', methods=['GET'])
 def get_current_conditions_for_location(location_id):
@@ -294,7 +413,7 @@ def get_current_conditions_for_location(location_id):
         'temperature_alert': latest_temp_alert.to_dict() if latest_temp_alert else None
     }
     return jsonify(result)
-
+#########################################################
 
 @app.route('/locations/<int:location_id>/temperature-history', methods=['GET'])
 def get_temperature_history(location_id):
@@ -339,104 +458,89 @@ def get_clothing_recommendations():
 
     print(data)
     return jsonify(recommendations)
+'''
 
-@app.errorhandler(404)
-def not_found(error):
-    return jsonify({'error': 'Not found'}), 404
 
-@app.errorhandler(500)
-def internal_error(error):
-    return jsonify({'error': 'Internal server error'}), 500
 ########################################################################
-# FAKE Database:
+'''# AI Model Routes
+import io 
+import torch
+import torch.nn as nn
+import torchvision
+from torch.utils.data import DataLoader
+from torchvision import transforms
+from PIL import Image
+from datasets import load_dataset  
+import numpy as np
+from transformers import AutoModelForImageClassification, AutoFeatureExtractor, TrainingArguments, Trainer
 
-fake = Faker()  # Create a Faker instance
+# Constants and model names
+model_name = r"D:\sun360\ai_models\fine_tuned_model"
+print("Does the directory exist?", os.path.isdir(model_name))
+print("Does config.json exist?", os.path.isfile(os.path.join(model_name, 'config.json')))
 
-# Function to generate sample data (modify as needed)
-def generate_data():
-    # Create and add locations
-    locations = [
-        Location(location_name="Melbourne, Australia", location_lat=-37.81, location_long=144.96),
-        Location(location_name="Sydney, Australia", location_lat=-33.86, location_long=151.20),
-        Location(location_name="Brisbane, Australia", location_lat=-27.47, location_long=153.02)
-    ]
-    db.session.add_all(locations)
-    db.session.flush()  # Flush to assign IDs for foreign key relationships
 
-    # Generate and add users, including their sunscreen applications and reminders
-    users = []
-    for _ in range(10):
-        location = fake.random_element(elements=locations)
-        user = User(
-            user_name=fake.name(),
-            user_email=fake.email(),
-            user_skin_type=fake.random_element(elements=('Type I', 'Type II', 'Type III', 'Type IV', 'Type V', 'Type VI')),
-            user_gender=fake.random_element(elements=('Male', 'Female', 'Other', 'Prefer not to say')),
-        )
-        db.session.add(user)
-        users.append(user)
-    db.session.flush()
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    # Create and add suburbs and temp alerts
-    suburbs = [
-        Suburb(suburb_name="Docklands", suburb_postcode=3008, suburb_state="VIC", location_id=locations[0].location_id, suburb_lat=-37.817, suburb_long=144.946),
-        Suburb(suburb_name="Surry Hills", suburb_postcode=2010, suburb_state="NSW", location_id=locations[1].location_id, suburb_lat=-33.884, suburb_long=151.21),
-    ]
-    temp_alerts = [
-        TempAlert(temp_alert_desc="High heat alert", temp_alert_timestamp=fake.date_time_this_year(), location_id=locations[0].location_id),
-        TempAlert(temp_alert_desc="Moderate heat warning", temp_alert_timestamp=fake.date_time_this_year(), location_id=locations[1].location_id),
-    ]
+# Load the pre-trained model
+model = AutoModelForImageClassification.from_pretrained(model_name).to(device)
+model.eval()
 
-    # Generate and add UV records, Mortality, and Incidence records
-    uv_records = []
-    mortality_records = []
-    incidence_records = []
-    for location in locations:
-        for _ in range(5):  # Assuming generating 5 records per location
-            uv_record = UVRecord(
-                uvrecord_timestamp=fake.date_time_this_year(), location_id=location.location_id,
-                uvindex_value=fake.random_int(min=0, max=11), temp_value=fake.random_int(min=15, max=40)
-            )
-            uv_records.append(uv_record)
+# Feature extractor for preprocessing images
+feature_extractor = AutoFeatureExtractor.from_pretrained(model_name)
 
-            mortality_record = Mortality(
-                location_lat=location.location_lat, location_long=location.location_long,
-                cancer_type=fake.random_element(elements=['Skin', 'Lung', 'Breast']),
-                year=fake.random_int(min=2000, max=2022), mort_count=fake.random_int(min=1, max=100),
-                mortil_age_group=fake.random_element(elements=['0-14', '15-44', '45-64', '65+']),
-                mortil_sex=fake.random_element(elements=['Male', 'Female'])
-            )
-            mortality_records.append(mortality_record)
+# Data preprocessing transformations (assuming consistency with training)
+data_transforms = transforms.Compose([
+    transforms.Resize(224),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+])
+dataset_path = "marmal88/skin_cancer"
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-            incidence_record = Incidence(
-                location_lat=location.location_lat, location_long=location.location_long,
-                cancer_type=mortality_record.cancer_type,  # Reusing the cancer type for consistency
-                year=mortality_record.year, inci_count=fake.random_int(min=1, max=200),
-                inci_age_group=mortality_record.mortil_age_group, inci_sex=mortality_record.mortil_sex
-            )
-            incidence_records.append(incidence_record)
+# Load the dataset from Hugging Face
+dataset = load_dataset(dataset_path)
+unique_labels = set()
+for example in dataset['train']:
+    unique_labels.add(example['dx'])
+unique_labels = sorted(list(unique_labels))
+label_to_id = {label: id for id, label in enumerate(unique_labels)}
+id_to_label = {id: label for label, id in label_to_id.items()}
 
-    # Add all generated items to the session
-    db.session.add_all(suburbs + temp_alerts + uv_records + mortality_records + incidence_records)
 
-    db.session.commit()
+@app.route('/predict_image', methods=['POST'])
+def predict():
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image provided'}), 400
 
+    file = request.files['image']
+    image_bytes = file.read()
+
+    try:
+        # Preprocess the image
+        image = Image.open(io.BytesIO(image_bytes)).convert('RGB')
+        inputs = feature_extractor(images=image, return_tensors="pt") if feature_extractor else data_transforms(image).unsqueeze(0)
+        pixel_values = inputs['pixel_values'].to(device) if feature_extractor else inputs.to(device)
+
+        # Make prediction
+        with torch.no_grad():
+            outputs = model(pixel_values)
+        logits = outputs.logits
+        predictions = torch.argmax(logits, dim=-1)
+        predicted_label = id_to_label[predictions.item()]
+
+        return jsonify({'prediction': predicted_label})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+'''
+########################################################################
+
+# Real Database:
 if __name__ == '__main__':
     with app.app_context():
-        db.create_all()  
-        if not User.query.first():  # More efficient check if users table is empty
-            generate_data()
+        try:
+            db.create_all()  # Attempt to create the database tables
+            print("Database tables created successfully.")
+        except Exception as e:
+            print(f"An error occurred while creating the database tables: {e}")
     app.run(debug=True, port=5000)
-
-########################################################################
-# Real Database:
-
-'''
-# Real Database:
-# Run the App (Development Mode)
-if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()  # Create database tables 
-    app.run(debug=True, port=5000) 
-
-'''

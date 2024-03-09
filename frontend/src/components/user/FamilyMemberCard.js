@@ -1,7 +1,7 @@
 // FamilyMemberCard.js
 import React from "react";
 import "./FamilyMemberCard.css";
-import SkinColorPalette from "./ui/elements/SkinColorPalette";
+import SkinColorPalette from "../basic-ui/elements/SkinColorPalette";
 
 function FamilyMemberCard({ member, onChange }) {
   return (

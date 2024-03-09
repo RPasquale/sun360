@@ -1,43 +1,51 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'; // Updated import
-import HomePage from './components/HomePage';
-import LoginPage from './components/LoginPage';
-import RegisterPage from './components/RegisterPage';
-import Navbar from './components/Navbar';
-import Reminders from './components/Reminders';
-import { UserProvider } from './components/UserContext';
+import React from "react";
 
-const API_BASE_URL = 'http://localhost:5000'; // Replace with your Flask app's URL
+import { Routes, Route, Navigate } from "react-router-dom"; // Updated import
+import Layout from "./components/basic-ui/elements/layout";
+import HomePage from "./pages/HomePage";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import RequireAuth from "./components/user/RequireAuth";
+import Reminders from "./components/Reminders";
+import useAuth from "./hooks/useAuth";
+import Page404 from "./pages/page404";
 
 function App() {
-  const [appState, setAppState] = useState({ loading: true, data: null });
-
-  useEffect(() => {
-    axios.get(`${API_BASE_URL}/`)  // Make an initial request to API
-      .then(response => {
-        setAppState({ loading: false, data: response.data });
-      })
-      .catch(error => { 
-        console.error('Error fetching data:', error);
-        setAppState({ loading: false, data: null }); // Adjust as needed for errors
-      });
-  }, []); 
+  // For validating whether user is logged in or not
+  const { auth } = useAuth();
 
   return (
-    <UserProvider>
-      <Router>
-        <div className="app-container">
-          <Navbar />
-          <Routes> 
-            <Route path="/" element={<HomePage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
+    <main className="app">
+      {/* Layout component for attaching navigation bar to the remaining app */}
+      <Layout>
+        <Routes>
+          {/* For home (/) route, if user is logged in, then navigated to search app and if not logged in, then navigated to login page */}
+          <Route exact path="/" element={<HomePage />} />
+
+          {/* Global paths - login and signup */}
+          <Route
+            path="/login"
+            element={
+              auth?.accessID && auth?.accessToken ? (
+                <Navigate to="/" replace />
+              ) : (
+                <LoginPage />
+              )
+            }
+          />
+
+          <Route path="/register" element={<RegisterPage />} />
+
+          {/* Protected Routes */}
+          <Route element={<RequireAuth />}>
             <Route path="/reminders" element={<Reminders />} />
-          </Routes>
-        </div>
-      </Router>
-    </UserProvider>
+          </Route>
+
+          {/* Invalid Paths */}
+          <Route path="*" element={<Page404 />} />
+        </Routes>
+      </Layout>
+    </main>
   );
 }
 
