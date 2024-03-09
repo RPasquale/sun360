@@ -67,15 +67,21 @@ with conn.cursor() as cur:
     conn.commit()
     conn.close()
 
-# # cur.execute("""CREATE TABLE MORTALITY (
-# #     mortl_id SERIAL PRIMARY KEY,
-# #     mortl_cancer_type VARCHAR(100),
-# #     mortl_year INTEGER,
-# #     mortl_sex CHAR(1),
-# #     mortl_age_group VARCHAR(20),
-# #     mortl_count INTEGER
-# # );""")
+    # cur.execute("""CREATE TABLE MORTALITY (
+    #     mortl_id SERIAL PRIMARY KEY,
+    #     mortl_cancer_type VARCHAR(100),
+    #     mortl_year INTEGER,
+    #     mortl_sex CHAR(1),
+    #     mortl_age_group VARCHAR(20),
+    #     mortl_count INTEGER
+    # );""")
 
+    # cur.execute("""CREATE TABLE IF NOT EXISTS SUBURB_SHP (
+    #         suburb_shp_id INTEGER PRIMARY KEY,
+    #         suburb_shp_name VARCHAR(100),
+    #         suburb_shp_lat DECIMAL,
+    #         suburb_shp_long DECIMAL
+    #     )""");
 
 # # cur.execute(
 # #     "CREATE TABLE test (id serial PRIMARY KEY, num integer, data varchar);")
