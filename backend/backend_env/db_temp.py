@@ -24,6 +24,7 @@ with conn.cursor() as cur:
     #     users_id SERIAL PRIMARY KEY,
     #     users_name VARCHAR(100),
     #     users_gender CHAR(1),
+    #     users_age SMALLINT,
     #     users_email VARCHAR(100),
     #     users_password VARCHAR(255),
     #     users_skin_type SMALLINT,
@@ -41,6 +42,7 @@ with conn.cursor() as cur:
     # cur.execute("""CREATE TABLE IF NOT EXISTS FAMILY_MEMBER (
     #     fm_id SERIAL PRIMARY KEY,
     #     fm_name VARCHAR(100),
+    #     fm_age SMALLINT,
     #     fm_gender CHAR(1),
     #     fm_skin_type SMALLINT,
     #     users_id INTEGER

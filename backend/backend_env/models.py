@@ -1,45 +1,49 @@
 from flask_sqlalchemy import SQLAlchemy
 from extensions import db
 
-class User(db.Model):
+class Users(db.Model):
     __tablename__ = 'users'
-    user_id = db.Column(db.BigInteger, primary_key=True)
-    user_name = db.Column(db.String(100), nullable=True)
-    user_gender = db.Column(db.String(1), nullable=True)
-    user_email = db.Column(db.String(100), unique=True, nullable=True)
+    users_id = db.Column(db.BigInteger, primary_key=True)
+    users_name = db.Column(db.String(100), nullable=True)
+    users_gender = db.Column(db.String(1), nullable=True)
+    users_email = db.Column(db.String(100), unique=True, nullable=True)
     users_password = db.Column(db.String(255), nullable=True)  # Use users_password
-    user_skin_type = db.Column(db.SmallInteger, nullable=True)
+    users_skin_type = db.Column(db.SmallInteger, nullable=True)
+    users_age = db.Column(db.SmallInteger, nullable=True)
+    users_access_token = db.Column(db.String(200), nullable=True)
     suburb_id = db.Column(db.BigInteger, db.ForeignKey('suburb.suburb_id'), nullable=True)
     
     # Define relationships
-    ss_reminders = db.relationship('SSReminder', back_populates='user', lazy=True)
+    ss_reminders = db.relationship('SSReminder', back_populates='users', lazy=True)
 
     __table_args__ = (
-        db.CheckConstraint("user_gender  IN ('M', 'F', 'X')", name='users_gender_chk'),
+        db.CheckConstraint("users_gender  IN ('M', 'F', 'X')", name='users_gender_chk'),
     )
             
     def to_dict(self):
         return {
-            'user_id': self.user_id,
-            'user_name': self.user_name,
-            'user_email': self.user_email,
-            'user_skin_type': self.user_skin_type,
-            'user_gender': self.user_gender,
+            'users_id': self.users_id,
+            'users_name': self.users_name,
+            'users_email': self.users_email,
+            'users_skin_type': self.users_skin_type,
+            'users_gender': self.users_gender,
+            'users_age': self.users_age,
+            'users_access_token': self.users_access_token,
             'ss_reminders': self.ss_reminders,
             'suburb_id': self.suburb_id
-    
         }
 
 
 
 class FamilyMember(db.Model):
     __tablename__ = 'family_member'
-    fm_id = db.Column(db.BigInteger, primary_key=True, autoincrement=False)
+    fm_id = db.Column(db.BigInteger, primary_key=True)
     fm_name = db.Column(db.String(100), nullable=True)
     fm_gender = db.Column(db.String(1), nullable=True)
+    fm_age = db.Column(db.SmallInteger, nullable=True)
     fm_skin_type = db.Column(db.SmallInteger, nullable=True)
-    user_id = db.Column(db.BigInteger, db.ForeignKey('users.user_id'), nullable=False)
-    user = db.relationship('User', backref='family_members')
+    users_id = db.Column(db.BigInteger, db.ForeignKey('users.users_id'), nullable=False)
+    users = db.relationship('Users', backref='family_members')
 
     __table_args__ = (
         db.CheckConstraint("fm_gender IN ('M', 'F', 'X')", name='fm_gender_chk'),
@@ -50,6 +54,7 @@ class FamilyMember(db.Model):
             'fm_id': self.fm_id,
             'fm_name': self.fm_name,
             'fm_gender': self.fm_gender,
+            'fm_age': self.fm_age,
             'fm_skin_type': self.fm_skin_type,
             'users_id': self.users_id
         }
@@ -64,7 +69,7 @@ class Suburb(db.Model):
     suburb_lat = db.Column(db.Numeric, nullable=True)  # Using Numeric for DECIMAL
     suburb_long = db.Column(db.Numeric, nullable=True)
 
-    users = db.relationship('User', backref='suburb', lazy=True)
+    users = db.relationship('Users', backref='suburb', lazy=True)
 
     def to_dict(self):
         return {
@@ -89,11 +94,11 @@ class SSReminder(db.Model):
     ssreminder_notes = db.Column(db.Text, nullable=True)  # Using Text for STRING
     ssreminder_color_code = db.Column(db.String(1), nullable=True)
     ssreminder_status = db.Column(db.String(1), nullable=True)
-    user_id = db.Column(db.BigInteger, db.ForeignKey('users.user_id'), nullable=False)
-    user = db.relationship('User', backref='ss_reminders')  
+    users_id = db.Column(db.BigInteger, db.ForeignKey('users.users_id'), nullable=False)
+    users = db.relationship('Users', backref='ss_reminders')  
 
     # Define relationships
-    user = db.relationship('User', back_populates='ss_reminders')
+    users = db.relationship('Users', back_populates='ss_reminders')
 
     __table_args__ = (
         db.CheckConstraint("ssreminder_type IN ('O', 'D', 'W')", name='ssreminder_type_chk'),
