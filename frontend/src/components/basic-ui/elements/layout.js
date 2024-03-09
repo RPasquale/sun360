@@ -2,7 +2,7 @@ import { Fragment } from "react";
 
 import Navbar from "./Navbar";
 
-import classes from "./layout.module.css";
+import "./layout.css";
 
 // For basic layout of every app page
 function Layout(props) {
@@ -10,7 +10,7 @@ function Layout(props) {
   return (
     <Fragment>
       <Navbar />
-      <main className={classes.main}>{props.children}</main>
+      <main className="main">{props.children}</main>
     </Fragment>
   );
 }

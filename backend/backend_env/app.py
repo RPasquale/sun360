@@ -19,7 +19,7 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
 
 db.init_app(app)
-CORS(app, supports_credentials=True, allow_headers="*")
+CORS(app, supports_credentials=True, allow_headers="*", origins="*")
 
 
 # Add this command to your app.py

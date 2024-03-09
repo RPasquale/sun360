@@ -42,8 +42,6 @@ function Login() {
       // Get access token and set auth global context to contain email and access token so that it can be used all over the app
       const accessToken = response?.data?.access_token;
       const accessID = response?.data?.access_id;
-      console.log(response.data)
-      console.log(accessToken, accessID);
       setAuth({ accessID, accessToken });
 
       // Clear input fields
