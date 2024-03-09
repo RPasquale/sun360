@@ -17,8 +17,9 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
+
 db.init_app(app)
-CORS(app, supports_credentials=True)
+CORS(app, supports_credentials=True, allow_headers="*")
 
 
 # Add this command to your app.py
@@ -86,7 +87,7 @@ def check_header():
 @app.before_request
 def protect_route():
     # Only apply the middleware to specific routes
-    if request.endpoint in ['logout', 'route2']:  # List the endpoints where you want to apply the middleware
+    if request.endpoint in ['logout']:  # List the endpoints where you want to apply the middleware
         return check_header()
 
 
