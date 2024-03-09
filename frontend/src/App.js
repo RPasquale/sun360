@@ -1,14 +1,13 @@
 import React from "react";
 
-import { Routes, Route } from "react-router-dom"; // Updated import
+import { Routes, Route, Navigate } from "react-router-dom"; // Updated import
 import Layout from "./components/basic-ui/elements/layout";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import RequireAuth from "./components/user/RequireAuth";
 import Reminders from "./components/Reminders";
 import useAuth from "./hooks/useAuth";
-import PersistLogin from "./components/user/PersistLogin";
-import RequireAuth from "./components/user/RequireAuth";
 import Page404 from "./pages/page404";
 
 function App() {
@@ -24,14 +23,22 @@ function App() {
           <Route exact path="/" element={<HomePage />} />
 
           {/* Global paths - login and signup */}
-          <Route path="/login" element={<LoginPage />} />
+          <Route
+            path="/login"
+            element={
+              auth?.accessID && auth?.accessToken ? (
+                <Navigate to="/" replace />
+              ) : (
+                <LoginPage />
+              )
+            }
+          />
+
           <Route path="/register" element={<RegisterPage />} />
 
           {/* Protected Routes */}
-          <Route element={<PersistLogin />}>
-            <Route element={<RequireAuth />}>
-              <Route path="/reminders" element={<Reminders />} />
-            </Route>
+          <Route element={<RequireAuth />}>
+            <Route path="/reminders" element={<Reminders />} />
           </Route>
 
           {/* Invalid Paths */}
