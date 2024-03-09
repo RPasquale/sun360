@@ -1,11 +1,11 @@
 // RegisterPage.js
 import React, { useState, useContext } from "react"; // Import useContext
 
-import "./RegisterPage.css"; // Import CSS file for register page styling
+import "./Register.css"; // Import CSS file for register page styling
 import SkinColorPalette from "../basic-ui/elements/SkinColorPalette";
 import FamilyMemberCard from "./FamilyMemberCard";
 
-function RegisterPage() {
+function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -232,4 +232,4 @@ function RegisterPage() {
   );
 }
 
-export default RegisterPage;
+export default Register;

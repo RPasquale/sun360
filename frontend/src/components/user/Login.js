@@ -1,9 +1,9 @@
 // LoginPage.js
 import React, { useState } from "react";
 import { Link } from 'react-router-dom'; // Import Link from react-router-dom
-import "./LoginPage.css"; // Import CSS file for login page styling
+import "./Login.css"; // Import CSS file for login page styling
 
-function LoginPage() {
+function Login() {
   const [email, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
@@ -68,4 +68,4 @@ function LoginPage() {
   );
 }
 
-export default LoginPage;
+export default Login;

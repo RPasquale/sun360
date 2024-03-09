@@ -2,14 +2,14 @@ import React from "react";
 
 import { Routes, Route } from "react-router-dom"; // Updated import
 import Layout from "./components/basic-ui/elements/layout";
-import HomePage from "./components/HomePage";
-import LoginPage from "./components/user/LoginPage";
-import RegisterPage from "./components/user/RegisterPage";
+import HomePage from "./pages/HomePage";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
 import Reminders from "./components/Reminders";
 import useAuth from "./hooks/useAuth";
 import PersistLogin from "./components/user/PersistLogin";
 import RequireAuth from "./components/user/RequireAuth";
-import Page404 from "./page404";
+import Page404 from "./pages/page404";
 
 function App() {
   // For validating whether user is logged in or not
