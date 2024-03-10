@@ -256,7 +256,8 @@ def get_data_for_suburbs():
     for suburb in all_suburbs[:1]:
         lat = suburb.suburb_shp_lat
         lon = suburb.suburb_shp_long
-        owapi_url = owapi_base_url.replace('<<lat>>', str(lat)).replace('<<lon>>', str(lon))
+        owapi_url = owapi_base_url.replace(
+            '<<lat>>', str(lat)).replace('<<lon>>', str(lon))
         print(owapi_url)
         response = requests.get(owapi_url)
         print(response.json())
@@ -291,6 +292,8 @@ def get_location(suburb_name):
 def manage_sunscreen_reminders(users_id):
     # Check if the user exists
     user = Users.query.get_or_404(users_id)
+    if not user:
+        return jsonify({'error': 'Invalid User'}), 400
 
     if request.method == 'GET':
         reminders = user.ss_reminders  # Fetch reminders via relationship
@@ -302,11 +305,30 @@ def manage_sunscreen_reminders(users_id):
         if not data:
             return jsonify({'error': 'No data provided'}), 400
 
+        ssreminder_type = data.get('ssreminder_type')
+        
         # Ensure that required fields are present in the data
-        if 'ssreminder_freq' not in data or 'ssreminder_time' not in data:
-            return jsonify({'error': 'Missing data for reminder frequency or time'}), 400
-        data = request.get_json()
-        new_reminder = SSReminder(users_id=users_id, **data)
+        if ssreminder_type == 'O' and (('ssreminder_date' not in data) or ('ssreminder_time' not in data)):
+            return jsonify({'error': 'Missing data for reminder date or time'}), 400
+
+        if ssreminder_type == 'D' and ('ssreminder_time' not in data):
+            return jsonify({'error': 'Missing data for reminder time'}), 400
+
+        if ssreminder_type == 'W' and ('ssreminder_weekday' not in data or 'ssreminder_time' not in data):
+            return jsonify({'error': 'Missing data for reminder weekdays or time'}), 400
+
+        if 'ssreminder_title' not in data:
+            return jsonify({'error': 'Missing data for reminder title'}), 400
+
+        new_reminder = SSReminder(users_id=users_id,
+                                  ssreminder_type=data.get('ssreminder_type'),
+                                  ssreminder_date=data.get('ssreminder_date'),
+                                  ssreminder_time=data.get('ssreminder_time'),
+                                  ssreminder_weekday=data.get('ssreminder_weekday'),
+                                  ssreminder_title=data.get('ssreminder_title'),
+                                  ssreminder_notes=data.get('ssreminder_notes') or '',
+                                  ssreminder_color_code=data.get('ssreminder_color_code') or 'Y',
+                                  ssreminder_status='P')
         db.session.add(new_reminder)
         db.session.commit()
         return jsonify(new_reminder.to_dict()), 201

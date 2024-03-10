@@ -109,9 +109,8 @@ class Suburb_Shp(db.Model):
 
 class SSReminder(db.Model):
     __tablename__ = 'ssreminder'
-    # Assuming INT8 maps to BigInteger
     ssreminder_id = db.Column(
-        db.BigInteger, primary_key=True, autoincrement=False)
+        db.BigInteger, primary_key=True)
     ssreminder_type = db.Column(db.String(1), nullable=True)
     ssreminder_date = db.Column(db.Date, nullable=True)
     ssreminder_time = db.Column(db.Time, nullable=True)
