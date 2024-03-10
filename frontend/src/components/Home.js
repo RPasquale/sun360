@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import "./Home.css";
-import "leaflet/dist/leaflet.css"; // Import Leaflet CSS
-import ChoroplethMap from "./ChoroplethMap";
+// import ChoroplethMap from "./uvlevels/ChoroplethMap";
 
 function Home() {
   const [isToggled, setIsToggled] = useState(false);
@@ -32,7 +31,7 @@ function Home() {
         <h4>{currentDate} Live</h4>
       </div>
 
-      <ChoroplethMap />
+      {/* <ChoroplethMap /> */}
     </div>
   );
 }

@@ -66,8 +66,8 @@ function Login() {
   return (
     <div className="login-container">
       <h2>Login</h2>
-      {loginStatus == 'p' && <p className="pending-message">{loginRemarks}</p>}
-      {loginStatus == 'e' && <p className="error-message">{loginRemarks}</p>}
+      {loginStatus === 'p' && <p className="pending-message">{loginRemarks}</p>}
+      {loginStatus === 'e' && <p className="error-message">{loginRemarks}</p>}
       <form onSubmit={handleSubmit} className="login-form">
         <div className="form-row">
           <label htmlFor="email" className="form-label">
