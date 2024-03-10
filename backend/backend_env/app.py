@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
-from models import Users, FamilyMember, Suburb, SSReminder, CancerStatistics,  CancerIncidence
+from models import Users, FamilyMember, Suburb, Suburb_Shp, SSReminder, CancerStatistics,  CancerIncidence
 import secrets
+import requests
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_cors import CORS
 # from config import Config
@@ -17,7 +18,8 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
-
+owapi_base_url = 'https://api.openweathermap.org/data/2.5/onecall?lat=<<lat>>&lon=<<lon>>&exclude=hourly,daily,minutely,alerts&appid=' + \
+    os.environ.get('OPEN_WEATHER_API_KEY')
 db.init_app(app)
 CORS(app, supports_credentials=True, allow_headers="*", origins="*")
 
@@ -63,31 +65,36 @@ def internal_error(error):
 
 ########################################################
 # Middlewares
+
+
 def check_header():
     # Check if the 'Authorization' header is present
     if 'Authorization' not in request.headers:
         return jsonify({'error': 'Missing Authorization header'}), 401
 
-    if  'Access-ID' not in request.headers:
+    if 'Access-ID' not in request.headers:
         return jsonify({'error': 'Missing Access-ID header'}), 401
-    
+
     authorization = request.headers.get('Authorization')
     access_id = int(request.headers.get('Access-ID'))
-    
+
     user = Users.query.filter_by(users_id=access_id).first()
     if not user:
         return jsonify({'error': 'Invalid Access ID'}), 401
-    
+
     if user.users_access_token != authorization:
         return jsonify({'error': 'Invalid Authorization'}), 401
-    
+
     return None
 
 # Apply the middleware to specific routes
+
+
 @app.before_request
 def protect_route():
     # Only apply the middleware to specific routes
-    if request.endpoint in ['logout']:  # List the endpoints where you want to apply the middleware
+    # List the endpoints where you want to apply the middleware
+    if request.endpoint in ['logout']:
         return check_header()
 
 
@@ -97,19 +104,23 @@ def protect_route():
 def login_user(user):
     try:
         access_token = secrets.token_hex(32)
-        Users.query.filter_by(users_id=user.users_id).update({"users_access_token": access_token})
+        Users.query.filter_by(users_id=user.users_id).update(
+            {"users_access_token": access_token})
         db.session.commit()
         return access_token
     except:
-        return None 
+        return None
+
 
 def logout_user(users_id):
     try:
-        Users.query.filter_by(users_id=users_id).update({"users_access_token": None})
+        Users.query.filter_by(users_id=users_id).update(
+            {"users_access_token": None})
         db.session.commit()
         return True
     except:
-        return False  
+        return False
+
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -147,7 +158,7 @@ def create_user():
     data = request.get_json()
 
     try:
-        
+
         if Users.query.filter_by(users_email=data.get('users_email')).first():
             return jsonify({'error': 'Email already exists'}), 400
 
@@ -162,7 +173,7 @@ def create_user():
             func.lower(Suburb.suburb_name) == data.get('suburb_name').lower(),
             Suburb.suburb_postcode == data.get('suburb_postcode')
         )).first()
-        
+
         if suburb is None:
             # Creating a new Suburb instance with the correct attribute
             suburb = Suburb(suburb_name=data.get('suburb_name'),
@@ -192,9 +203,11 @@ def create_user():
             for fm_idx in range(len(family_members)):
                 data_fm = family_members[fm_idx]
                 new_family_member = FamilyMember(fm_name=data_fm.get('fm_name'),
-                                                 fm_gender=data_fm.get('fm_gender'),
+                                                 fm_gender=data_fm.get(
+                                                     'fm_gender'),
                                                  fm_age=data_fm.get('fm_age'),
-                                                 fm_skin_type=data_fm.get('fm_skin_type'),
+                                                 fm_skin_type=data_fm.get(
+                                                     'fm_skin_type'),
                                                  users_id=new_user.users_id
                                                  )
                 db.session.add(new_family_member)
@@ -231,8 +244,23 @@ def manage_user(users_id):
         db.session.delete(user)
         db.session.commit()
         return '', 204  # Return empty response, status code 204
+
 #########################################################
 # LOCATIONS
+
+
+@app.route('/suburb-UV-temp', methods=['GET'])
+def get_data_for_suburbs():
+    # All Shape File locations
+    all_suburbs = Suburb_Shp.query.all()
+    for suburb in all_suburbs[:1]:
+        lat = suburb.suburb_shp_lat
+        lon = suburb.suburb_shp_long
+        owapi_url = owapi_base_url.replace('<<lat>>', str(lat)).replace('<<lon>>', str(lon))
+        print(owapi_url)
+        response = requests.get(owapi_url)
+        print(response.json())
+    return jsonify(all_suburbs)
 
 
 @app.route('/locations', methods=['GET'])
