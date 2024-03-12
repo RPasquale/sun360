@@ -1,0 +1,37 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.11  # Use the latest Python version supported by AWS CodeBuild
+      nodejs: 16    # Use the Node.js version that matches your development environment
+    commands:
+      # Install Node.js dependencies for the React frontend
+      - echo Installing Node.js dependencies...
+      - cd frontend  # Navigate to your frontend directory
+      - npm install
+
+  pre_build:
+    commands:
+      - echo Pre-build phase...
+
+  build:
+    commands:
+      - echo Building React app...
+      - npm run build  # This will create a production build of your React app
+
+  post_build:
+    commands:
+      - echo Post-build phase...
+      - echo Preparing artifacts...
+      # Assume 'frontend/build' contains the built React app
+      # Assume 'backend' contains the Flask application files
+      - mkdir -p app-deployment/frontend
+      - mkdir -p app-deployment/backend
+      - cp -R frontend/build/* app-deployment/frontend/
+      - cp -R backend/* app-deployment/backend/
+
+artifacts:
+  discard-paths: yes
+  files:
+    - app-deployment/*/  # All files from the app-deployment directory will be included as artifacts
