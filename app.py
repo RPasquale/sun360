@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, request
+from flask.helpers import send_from_directory
 from models import Users, FamilyMember, Suburb, Suburb_Shp, SSReminder, CancerStatistics,  CancerIncidence
 import secrets
 import requests
@@ -12,13 +13,11 @@ from sqlalchemy import create_engine, func, and_
 from sqlalchemy.engine.reflection import Inspector
 
 # AI Model Libraries
-from flask import Flask, request, jsonify
+import io
+import json
 import torch
 from transformers import AutoModelForImageClassification, AutoFeatureExtractor
 from PIL import Image
-import io
-import os
-import json
 from torchvision import transforms
 
 load_dotenv()
@@ -90,8 +89,9 @@ def create_db():
 
 
 @app.route('/')
+@cross_origin()
 def index():
-    return jsonify({'message': 'Welcome to the Sun360 API!'})
+    return send_from_directory(app.static_folder, 'index.html')
 
 
 @app.errorhandler(404)
