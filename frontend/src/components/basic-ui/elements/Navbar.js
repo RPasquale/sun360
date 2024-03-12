@@ -79,6 +79,9 @@ function Navbar() {
           <Link to="/reminders" onClick={() => closeDropdown()}>
             Reminders
           </Link>
+          <Link to="/skin-spot-prediction" onClick={() => closeDropdown()}>
+            Skin Spot Predictor
+          </Link>
         </div>
       </div>
       <div className="navbar-center">

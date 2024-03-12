@@ -12,6 +12,16 @@ from flask import Flask
 from sqlalchemy import create_engine, func, and_
 from sqlalchemy.engine.reflection import Inspector
 
+# AI Model Libraries
+from flask import Flask, request, jsonify
+import torch
+from transformers import AutoModelForImageClassification, AutoFeatureExtractor
+from PIL import Image
+import io
+import os
+import json
+from torchvision import transforms
+
 load_dotenv()
 
 #######################################################
@@ -23,8 +33,39 @@ owapi_base_url = 'https://api.openweathermap.org/data/2.5/onecall?lat=<<lat>>&lo
 db.init_app(app)
 CORS(app, supports_credentials=True, allow_headers="*", origins="*")
 
+# Constants and model paths
+model_path = 'D:\\sun360\\ai_models\\fine_tuned_model'
+print("Does the directory exist?", os.path.isdir(model_path))
+print("Does config.json exist?", os.path.isfile(
+    os.path.join(model_path, 'config.json')))
 
-# Add this command to your app.py
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+# Load the pre-trained model
+model = AutoModelForImageClassification.from_pretrained(model_path).to(device)
+model.eval()
+
+# Load the feature extractor
+feature_extractor = AutoFeatureExtractor.from_pretrained(model_path)
+
+# Load the label mappings
+label_to_id_path = os.path.join(model_path, 'label_to_id.json')
+id_to_label_path = os.path.join(model_path, 'id_to_label.json')
+
+with open(label_to_id_path, 'r') as file:
+    label_to_id = json.load(file)
+
+with open(id_to_label_path, 'r') as file:
+    id_to_label = json.load(file)
+
+# Define the data preprocessing transformations
+data_transforms = transforms.Compose([
+    transforms.Resize(224),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+])
+
+
 @app.cli.command("check-tables")
 def check_tables():
     """Check if tables exist in the database."""
@@ -306,7 +347,7 @@ def manage_sunscreen_reminders(users_id):
             return jsonify({'error': 'No data provided'}), 400
 
         ssreminder_type = data.get('ssreminder_type')
-        
+
         # Ensure that required fields are present in the data
         if ssreminder_type == 'O' and (('ssreminder_date' not in data) or ('ssreminder_time' not in data)):
             return jsonify({'error': 'Missing data for reminder date or time'}), 400
@@ -324,10 +365,14 @@ def manage_sunscreen_reminders(users_id):
                                   ssreminder_type=data.get('ssreminder_type'),
                                   ssreminder_date=data.get('ssreminder_date'),
                                   ssreminder_time=data.get('ssreminder_time'),
-                                  ssreminder_weekday=data.get('ssreminder_weekday'),
-                                  ssreminder_title=data.get('ssreminder_title'),
-                                  ssreminder_notes=data.get('ssreminder_notes') or '',
-                                  ssreminder_color_code=data.get('ssreminder_color_code') or 'Y',
+                                  ssreminder_weekday=data.get(
+                                      'ssreminder_weekday'),
+                                  ssreminder_title=data.get(
+                                      'ssreminder_title'),
+                                  ssreminder_notes=data.get(
+                                      'ssreminder_notes') or '',
+                                  ssreminder_color_code=data.get(
+                                      'ssreminder_color_code') or 'Y',
                                   ssreminder_status='P')
         db.session.add(new_reminder)
         db.session.commit()
@@ -363,6 +408,37 @@ def delete_sunscreen_reminder(users_id, ssreminder_id):
 
 
 #########################################################
+
+# Skin Spot Prediction routes
+
+@app.route('/predict_image', methods=['POST'])
+def predict():
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image provided'}), 400
+
+    file = request.files['image']
+    image_bytes = file.read()
+
+    try:
+        # Preprocess the image
+        image = Image.open(io.BytesIO(image_bytes)).convert('RGB')
+        inputs = feature_extractor(
+            images=image, return_tensors="pt") if feature_extractor else data_transforms(image).unsqueeze(0)
+        pixel_values = inputs['pixel_values'].to(
+            device) if feature_extractor else inputs.to(device)
+
+        # Make prediction
+        with torch.no_grad():
+            outputs = model(pixel_values)
+        logits = outputs.logits
+        predictions = torch.argmax(logits, dim=-1)
+        predicted_label = id_to_label[str(predictions.item())]
+
+        return jsonify({'prediction': predicted_label})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 '''# UV DATA (Simplified)
 @app.route('/uv-data', methods=['GET'])
 def get_uv_data():

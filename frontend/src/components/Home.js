@@ -11,12 +11,14 @@ function Home() {
 
   return (
     <div className="home-main">
-      <h6>
+      <h5>
         <i>
-          Sun360 is the innovative web application to protect you and your
-          family from harmful sun damage in Victoria, Australia.
+          <center>
+            Sun360 is the innovative web application to protect you and your
+            family from harmful sun damage in Victoria, Australia.
+          </center>
         </i>
-      </h6>
+      </h5>
       <div className="map-line">
         <div className="toggle-button-container" onClick={handleChange}>
           <button
