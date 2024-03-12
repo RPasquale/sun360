@@ -4,7 +4,7 @@ phases:
   install:
     runtime-versions:
       python: 3.11  # Use the latest Python version supported by AWS CodeBuild
-      nodejs: 16    # Use the Node.js version that matches your development environment
+      nodejs: 18    # Use the Node.js version that matches your development environment
     commands:
       # Install Node.js dependencies for the React frontend
       - echo Installing Node.js dependencies...
