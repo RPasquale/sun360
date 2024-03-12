@@ -89,12 +89,6 @@ def create_db():
 # Basic Routes (Placeholders )
 
 
-@app.route('/')
-@cross_origin()
-def index():
-    return send_from_directory(app.static_folder, 'index.html')
-
-
 @app.errorhandler(404)
 def not_found(error):
     return jsonify({'error': 'Not found'}), 404
