@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
@@ -14,8 +14,10 @@ const getCurrentDate = () => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
-const SET_REMINDER_URL =
-  "http://127.0.0.1:5000/users/<<user_id>>/sunscreen-reminders";
+const GET_REMINDER_URL =
+  "http://127.0.0.1:5000/users/<<user_id>>/sunscreen-reminders/";
+const UPDATE_REMINDER_URL =
+  "http://127.0.0.1:5000/users/<<user_id>>/sunscreen-reminders/";
 
 function convertTo24HourFormat(time12) {
   let { hour, minute, amOrPm } = time12;
@@ -32,12 +34,26 @@ function convertTo24HourFormat(time12) {
   return time24;
 }
 
-function ReminderForm() {
+function getFullReminderFrequency(reminderFrequency) {
+  switch (reminderFrequency) {
+    case "O":
+      return "One Time";
+    case "D":
+      return "Daily";
+    case "W":
+      return "Weekly";
+  }
+}
+
+function ReminderForm({ reminderId }) {
   const { auth } = useAuth();
   const navigate = useNavigate();
-  const [frequency, setFrequency] = useState("O");
+  const [reminderFrequency, setReminderFrequency] = useState("O");
+  const [updatedFrequency, setUpdatedFrequency] = useState("O");
   const [selectedDate, setSelectedDate] = useState("");
+  const [updatedDate, setUpdatedDate] = useState("");
   const [selectedWeekday, setSelectedWeekday] = useState("MO");
+  const [updatedWeekday, setUpdatedWeekday] = useState("");
   const [selectedTime, setSelectedTime] = useState({
     hour: "",
     minute: "",
@@ -46,19 +62,46 @@ function ReminderForm() {
   const [user, setUser] = useState("");
   const [notes, setNotes] = useState("");
   const [selectedColor, setSelectedColor] = useState("Y");
+  const [updatedColor, setUpdatedColor] = useState("");
   const [status, setStatus] = useState(null);
   const [remarks, setRemarks] = useState("");
   const [currentDate, _] = useState(getCurrentDate());
+
+  useEffect(() => {
+    const fetchReminderDetails = async () => {
+      try {
+        const response = await axios.get(
+          GET_REMINDER_URL.replace("<<user_id>>", auth.accessID) + reminderId
+        );
+        const reminderData = response.data;
+
+        setReminderFrequency(reminderData.ssreminder_type);
+        setSelectedDate(reminderData.ssreminder_date || "");
+        setSelectedWeekday(reminderData.ssreminder_weekday || "MO");
+        setUser(reminderData.ssreminder_title);
+        setNotes(reminderData.ssreminder_notes);
+        setSelectedColor(reminderData.ssreminder_color_code);
+
+        const [hour, minute] = reminderData.ssreminder_time.split(":");
+        const amOrPm = hour >= 12 ? "pm" : "am";
+        setSelectedTime({ hour: hour % 12, minute, amOrPm });
+      } catch (error) {
+        console.error("Error fetching reminder details:", error);
+      }
+    };
+
+    fetchReminderDetails();
+  }, [auth.accessID, reminderId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
       setStatus("p");
-      setRemarks("Registering your details");
+      setRemarks("Updating your details");
 
-      await axios.post(
-        SET_REMINDER_URL.replace("<<user_id>>", auth.accessID),
+      await axios.put(
+        UPDATE_REMINDER_URL.replace("<<user_id>>", auth.accessID) + reminderId,
         JSON.stringify({
           ssreminder_type: frequency,
           ssreminder_date: frequency === "O" ? selectedDate : null,
@@ -77,26 +120,36 @@ function ReminderForm() {
 
       navigate("/reminders");
     } catch (error) {
-      console.error("Registration Error:", error);
+      console.error("Update Error:", error);
       setStatus("e");
-      setRemarks("Registration failed. Please try again.");
+      setRemarks("Update failed. Please try again.");
     }
   };
 
   return (
     <div className="reminder-container">
-      <h2>Set Reminders</h2>
+      <h2>Update Reminder</h2>
       <form onSubmit={handleSubmit} className="reminder-form">
         <div className="form-row">
           <label htmlFor="frequency" className="form-label">
-            Select Frequency
+            Reminder Frequency
+          </label>
+          <input
+            type="text"
+            name="reminderFrequency"
+            id="reminderFrequency"
+            value={reminderFrequency}
+            disabled
+          />
+          <label htmlFor="frequency" className="form-label">
+            Update Frequency
           </label>
           <select
             name="frequency"
             id="frequency"
-            value={frequency}
+            value={updatedFrequency}
             defaultValue="O"
-            onChange={(e) => setFrequency(e.target.value)}
+            onChange={(e) => setUpdatedFrequency(e.target.value)}
           >
             <option value="O">One Time</option>
             <option value="D">Daily</option>
@@ -105,6 +158,17 @@ function ReminderForm() {
         </div>
         {frequency === "O" && (
           <div className="form-row">
+            <label htmlFor="date" className="form-label">
+              Reminder Date
+            </label>
+            <input
+              type="date"
+              name="date"
+              id="date"
+              min={currentDate}
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+            />
             <label htmlFor="date" className="form-label">
               Date
             </label>
@@ -244,8 +308,7 @@ function ReminderForm() {
 
         {status === "p" && <p className="pending-message">{remarks}</p>}
         {status === "e" && <p className="error-message">{remarks}</p>}
-
-        <button type="submit">Submit</button>
+        <button type="submit">Update</button>
       </form>
     </div>
   );

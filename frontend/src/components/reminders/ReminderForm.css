@@ -95,6 +95,15 @@ select#color option.G:hover {
   margin-left: 10px;
 }
 
+.error-message {
+  color: red;
+}
+
+.pending-message {
+  color: black;
+  font-style: italic;
+}
+
 select {
   width: 106%;
   height: 40px;

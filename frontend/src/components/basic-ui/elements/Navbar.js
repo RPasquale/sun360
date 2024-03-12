@@ -21,15 +21,15 @@ function Navbar() {
   const handleLogout = async () => {
     try {
       // Get request to backend server for logout
-      await axios.post(
-        LOGOUT_URL + "/" + auth.accessID,
-        {},
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      // await axios.post(
+      //   LOGOUT_URL + "/" + auth.accessID,
+      //   {},
+      //   {
+      //     headers: {
+      //       "Content-Type": "application/json",
+      //     },
+      //   }
+      // );
       setTimeout(() => {
         // Reset the auth on logout
         setAuth({});
@@ -79,9 +79,9 @@ function Navbar() {
           <Link to="/reminders" onClick={() => closeDropdown()}>
             Reminders
           </Link>
-          <Link to="/skin-spot-prediction" onClick={() => closeDropdown()}>
+          {/* <Link to="/skin-spot-prediction" onClick={() => closeDropdown()}>
             Skin Spot Predictor
-          </Link>
+          </Link> */}
         </div>
       </div>
       <div className="navbar-center">

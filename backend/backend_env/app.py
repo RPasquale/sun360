@@ -33,37 +33,38 @@ owapi_base_url = 'https://api.openweathermap.org/data/2.5/onecall?lat=<<lat>>&lo
 db.init_app(app)
 CORS(app, supports_credentials=True, allow_headers="*", origins="*")
 
-# Constants and model paths
-model_path = 'D:\\sun360\\ai_models\\fine_tuned_model'
-print("Does the directory exist?", os.path.isdir(model_path))
-print("Does config.json exist?", os.path.isfile(
-    os.path.join(model_path, 'config.json')))
+# # Constants and model paths
+# model_path = os.getcwd() + '\\sun360\\ai_models\\fine_tuned_model'
+# print(model_path)
+# print("Does the directory exist?", os.path.isdir(model_path))
+# print("Does config.json exist?", os.path.isfile(
+#     os.path.join(model_path, 'config.json')))
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# Load the pre-trained model
-model = AutoModelForImageClassification.from_pretrained(model_path).to(device)
-model.eval()
+# # Load the pre-trained model
+# model = AutoModelForImageClassification.from_pretrained(model_path).to(device)
+# model.eval()
 
-# Load the feature extractor
-feature_extractor = AutoFeatureExtractor.from_pretrained(model_path)
+# # Load the feature extractor
+# feature_extractor = AutoFeatureExtractor.from_pretrained(model_path)
 
-# Load the label mappings
-label_to_id_path = os.path.join(model_path, 'label_to_id.json')
-id_to_label_path = os.path.join(model_path, 'id_to_label.json')
+# # Load the label mappings
+# label_to_id_path = os.path.join(model_path, 'label_to_id.json')
+# id_to_label_path = os.path.join(model_path, 'id_to_label.json')
 
-with open(label_to_id_path, 'r') as file:
-    label_to_id = json.load(file)
+# with open(label_to_id_path, 'r') as file:
+#     label_to_id = json.load(file)
 
-with open(id_to_label_path, 'r') as file:
-    id_to_label = json.load(file)
+# with open(id_to_label_path, 'r') as file:
+#     id_to_label = json.load(file)
 
-# Define the data preprocessing transformations
-data_transforms = transforms.Compose([
-    transforms.Resize(224),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-])
+# # Define the data preprocessing transformations
+# data_transforms = transforms.Compose([
+#     transforms.Resize(224),
+#     transforms.ToTensor(),
+#     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+# ])
 
 
 @app.cli.command("check-tables")
