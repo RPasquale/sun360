@@ -8,7 +8,7 @@ function RequireAuth() {
   // If user is not logged it, then access to any protected route must be redirected to login page
   return (
     <>
-      {auth?.email ? (
+      {auth?.accessID ? (
         <Outlet />
       ) : (
         <Navigate to="/login" state={{ from: location }} replace />

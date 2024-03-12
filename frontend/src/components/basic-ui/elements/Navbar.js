@@ -22,15 +22,12 @@ function Navbar() {
     try {
       // Get request to backend server for logout
       // await axios.post(
-      //   LOGOUT_URL,
+      //   LOGOUT_URL + "/" + auth.accessID,
       //   {},
       //   {
       //     headers: {
       //       "Content-Type": "application/json",
-      //       "Authorization": auth.accessToken,
-      //       "Access-ID": auth.accessID,
       //     },
-      //     withCredentials: true,
       //   }
       // );
       setTimeout(() => {
@@ -49,12 +46,23 @@ function Navbar() {
     setIsDropdownOpen(!isDropdownOpen);
   };
 
+  const closeDropdown = () => {
+    setShowDropdown(false);
+    setIsDropdownOpen(false);
+  };
+
   useEffect(() => {
     const dropdownContent = document.querySelector(".dropdown-content");
     if (dropdownContent) {
       dropdownContent.style.display = showDropdown ? "block" : "none";
     }
   }, [showDropdown]);
+
+  useEffect(() => {
+    setTimeout(() => {
+      closeDropdown();
+    }, 5000);
+  }, [isDropdownOpen]);
 
   return (
     <nav className="navbar">
@@ -65,8 +73,15 @@ function Navbar() {
           </div>
         </button>
         <div className={`dropdown-content ${isDropdownOpen ? "open" : ""}`}>
-          <Link to="/uv-impact">UV Impact</Link>
-          <Link to="/reminders">Reminders</Link>
+          <Link to="/uv-impact" onClick={() => closeDropdown()}>
+            UV Impact
+          </Link>
+          <Link to="/reminders" onClick={() => closeDropdown()}>
+            Reminders
+          </Link>
+          {/* <Link to="/skin-spot-prediction" onClick={() => closeDropdown()}>
+            Skin Spot Predictor
+          </Link> */}
         </div>
       </div>
       <div className="navbar-center">

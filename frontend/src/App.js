@@ -5,8 +5,10 @@ import Layout from "./components/basic-ui/elements/layout";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import RemindersPage from "./pages/RemindersPage";
+import AddRemindersPage from "./pages/AddRemindersPage";
+import SkinSpotPredPage from "./pages/SkinSpotPredPage";
 import RequireAuth from "./components/user/RequireAuth";
-import Reminders from "./components/Reminders";
 import useAuth from "./hooks/useAuth";
 import Page404 from "./pages/page404";
 
@@ -38,7 +40,12 @@ function App() {
 
           {/* Protected Routes */}
           <Route element={<RequireAuth />}>
-            <Route path="/reminders" element={<Reminders />} />
+            <Route path="/reminders" element={<RemindersPage />} />
+            <Route path="/add-reminder" element={<AddRemindersPage />} />
+            <Route
+              path="/skin-spot-prediction"
+              element={<SkinSpotPredPage />}
+            />
           </Route>
 
           {/* Invalid Paths */}
